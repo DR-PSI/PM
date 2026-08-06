@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ตารางแผนบำรุงรักษาเชิงป้องกัน — หม้อแปลงไฟฟ้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF2F5;
+    --panel:#FFFFFF;
+    --ink:#122B41;
+    --ink-soft:#4C6478;
+    --line:#C7D2DA;
+    --line-soft:#DCE4E9;
+    --copper:#BF7327;
+    --copper-soft:#F3E3CF;
+    --ok:#2C7A5B;
+    --ok-soft:#DCEEE6;
+    --warn:#BF7327;
+    --warn-soft:#F6E7D3;
+    --danger:#B03A2B;
+    --danger-soft:#F5DBD6;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size:28px 28px;
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','IBM Plex Sans',sans-serif;
+    padding:32px 16px 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sheet{
+    max-width:1080px;
+    margin:0 auto;
+    background:var(--panel);
+    border:1px solid var(--line);
+    position:relative;
+    box-shadow:0 1px 3px rgba(18,43,65,0.06), 0 12px 32px rgba(18,43,65,0.05);
+  }
+
+  /* engineering-drawing corner registration marks */
+  .sheet::before, .sheet::after,
+  .corner-br, .corner-bl{
+    content:"";
+    position:absolute;
+    width:18px; height:18px;
+    z-index:3;
+  }
+  .sheet::before{ top:-1px; left:-1px; border-top:2px solid var(--ink); border-left:2px solid var(--ink); }
+  .sheet::after{ top:-1px; right:-1px; border-top:2px solid var(--ink); border-right:2px solid var(--ink); }
+  .corner-bl{ bottom:-1px; left:-1px; border-bottom:2px solid var(--ink); border-left:2px solid var(--ink); }
+  .corner-br{ bottom:-1px; right:-1px; border-bottom:2px solid var(--ink); border-right:2px solid var(--ink); }
+
+  /* ===== HEADER / TITLE BLOCK ===== */
+  .head{
+    display:grid;
+    grid-template-columns:1fr 260px;
+    border-bottom:2px solid var(--ink);
+  }
+  .head-main{
+    padding:28px 32px 22px;
+    border-right:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--copper);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 6px;
+    line-height:1.25;
+    color:var(--ink);
+  }
+  .subtitle{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+  .head-meta{
+    padding:20px 24px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .head-meta .row{ display:flex; justify-content:space-between; gap:8px; border-bottom:1px dashed var(--line); padding-bottom:6px;}
+  .head-meta .row:last-child{ border-bottom:none; }
+  .head-meta .k{ color:var(--ink-soft); }
+  .head-meta .v{ color:var(--ink); font-weight:600; text-align:right; }
+
+  /* single-line-diagram style divider */
+  .circuit-rule{
+    height:26px;
+    display:flex; align-items:center;
+    padding:0 32px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .circuit-rule svg{ width:100%; height:10px; display:block; }
+
+  /* ===== MEMO BLOCK ===== */
+  .memo{
+    padding:20px 32px 8px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px 28px;
+    font-size:13px;
+  }
+  .memo div span.k{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:3px;}
+  .memo div span.v{ font-weight:600; }
+
+  /* ===== STAT STRIP ===== */
+  .stats{
+    padding:20px 32px 4px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .stat{
+    border:1px solid var(--line);
+    border-left:3px solid var(--ink);
+    padding:14px 16px;
+    background:var(--paper);
+  }
+  .stat.ok{ border-left-color:var(--ok); }
+  .stat.warn{ border-left-color:var(--warn); }
+  .stat.danger{ border-left-color:var(--danger); }
+  .stat .num{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:28px;
+    font-weight:700;
+    line-height:1;
+  }
+  .stat .label{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+
+  /* ===== SECTION LABEL ===== */
+  .section-label{
+    padding:26px 32px 10px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .section-label h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    letter-spacing:.02em;
+    margin:0;
+    color:var(--ink);
+  }
+  .section-label .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    padding:2px 8px;
+    border-radius:2px;
+  }
+
+  /* ===== CARDS (per-asset summary) ===== */
+  .cards{
+    padding:6px 32px 8px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(300px,1fr));
+    gap:16px;
+  }
+  .card{
+    border:1px solid var(--line);
+    padding:16px 18px 14px;
+    position:relative;
+    background:#fff;
+  }
+  .card .pm-no{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--copper);
+    font-weight:600;
+    letter-spacing:.04em;
+  }
+  .card h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    margin:6px 0 10px;
+    line-height:1.4;
+    color:var(--ink);
+  }
+  .card .meta-line{
+    display:flex; justify-content:space-between;
+    font-size:12px; color:var(--ink-soft);
+    padding:5px 0; border-top:1px dashed var(--line-soft);
+  }
+  .card .meta-line b{ color:var(--ink); font-weight:600; }
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px; font-weight:600;
+    padding:3px 9px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:.04em;
+  }
+  .badge::before{ content:""; width:6px; height:6px; border-radius:50%; }
+  .badge.ok{ background:var(--ok-soft); color:var(--ok); }
+  .badge.ok::before{ background:var(--ok); }
+  .badge.warn{ background:var(--warn-soft); color:var(--warn); }
+  .badge.warn::before{ background:var(--warn); }
+  .badge.danger{ background:var(--danger-soft); color:var(--danger); }
+  .badge.danger::before{ background:var(--danger); }
+
+  /* ===== GANTT SCHEDULE GRAPHIC ===== */
+  .gantt-wrap{ padding:8px 32px 30px; }
+  .gantt{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    border:1px solid var(--line);
+  }
+  .gantt-side{
+    border-right:2px solid var(--ink);
+    display:flex;
+    flex-direction:column;
+  }
+  .gantt-side-head{
+    height:40px;
+    display:flex; align-items:center;
+    padding:0 14px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-soft);
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .gantt-side-row{
+    height:78px;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:0 14px;
+    border-bottom:1px solid var(--line-soft);
+    gap:2px;
+  }
+  .gantt-side-row:last-child{ border-bottom:none; }
+  .gantt-side-row .pmno{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; font-weight:600; color:var(--copper);
+  }
+  .gantt-side-row .name{ font-size:12px; font-weight:600; line-height:1.3; }
+  .gantt-side-row .name small{ display:block; font-weight:400; color:var(--ink-soft); font-size:10.5px; margin-top:2px;}
+  .gantt-side-row .name small.route{ font-family:'IBM Plex Mono',monospace; color:var(--copper); margin-top:1px; }
+
+  .gantt-main{ position:relative; overflow:hidden; }
+  .gantt-axis{
+    position:relative;
+    height:40px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .gantt-axis span{
+    position:absolute; top:0; height:100%;
+    display:flex; align-items:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px; color:var(--ink-soft);
+    padding-left:6px;
+    border-left:1px solid var(--line);
+  }
+  .gantt-body{ position:relative; }
+  .gantt-grid{ position:absolute; inset:0; }
+  .gantt-grid i{ position:absolute; top:0; bottom:0; width:1px; background:var(--line-soft); font-style:normal; }
+  .gantt-today{
+    position:absolute; top:0; bottom:0; width:0;
+    border-left:2px dashed var(--copper);
+    z-index:2;
+  }
+  .gantt-today span{
+    position:absolute; top:-30px; left:6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; color:var(--copper); font-weight:600;
+    white-space:nowrap;
+  }
+  .gantt-row{
+    position:relative;
+    height:78px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .gantt-row:last-child{ border-bottom:none; }
+  .gantt-bar{
+    position:absolute;
+    top:50%; transform:translateY(-50%);
+    height:14px;
+    border-radius:7px;
+    background:var(--ok-soft);
+    border:1px solid var(--ok);
+  }
+  .gantt-bar.warn{ background:var(--warn-soft); border-color:var(--warn); }
+  .gantt-bar.danger{ background:var(--danger-soft); border-color:var(--danger); }
+  .gantt-bar .due-marker{
+    position:absolute; right:-6px; top:50%;
+    width:12px; height:12px;
+    transform:translateY(-50%) rotate(45deg);
+    background:var(--ok);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--ok);
+  }
+  .gantt-bar.warn .due-marker{ background:var(--warn); box-shadow:0 0 0 1px var(--warn); }
+  .gantt-bar.danger .due-marker{ background:var(--danger); box-shadow:0 0 0 1px var(--danger); }
+  .due-label{
+    position:absolute; right:-6px; bottom:calc(100% + 6px);
+    transform:translateX(50%);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px; font-weight:600;
+    color:var(--ink);
+    background:#fff;
+    border:1px solid var(--line);
+    padding:2px 6px;
+    border-radius:3px;
+    white-space:nowrap;
+    z-index:1;
+  }
+  .due-label::after{
+    content:"";
+    position:absolute; top:100%; left:50%;
+    transform:translateX(-50%);
+    width:1px; height:8px;
+    background:var(--line);
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap{ padding:8px 32px 30px; overflow-x:auto; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    min-width:920px;
+  }
+  thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:600;
+    padding:10px 12px;
+    border-bottom:2px solid var(--ink);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:12px 12px;
+    border-bottom:1px solid var(--line-soft);
+    vertical-align:top;
+  }
+  tbody tr:hover{ background:var(--paper); }
+  td.pmno{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--copper); white-space:nowrap;}
+  td.asset-name{ font-weight:600; max-width:230px; }
+  td .sub{ display:block; font-size:11px; color:var(--ink-soft); margin-top:2px; font-weight:400;}
+  td.mono{ font-family:'IBM Plex Mono',monospace; white-space:nowrap;}
+
+  .days{ display:flex; gap:4px; }
+  .day-dot{
+    width:20px; height:20px; border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600;
+    background:var(--line-soft); color:var(--ink-soft);
+  }
+  .day-dot.on{ background:var(--ink); color:#fff; }
+
+  /* ===== LEGEND ===== */
+  .legend{
+    padding:0 32px 26px;
+    display:flex; flex-wrap:wrap; gap:18px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .legend .item{ display:flex; align-items:center; gap:6px; }
+  .legend .dot{ width:8px; height:8px; border-radius:50%; }
+
+  /* ===== SIGN-OFF ===== */
+  .signoff{
+    border-top:2px solid var(--ink);
+    padding:26px 32px 30px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:24px;
+  }
+  .signoff .box .role{ font-size:11.5px; color:var(--ink-soft); margin-bottom:34px; }
+  .signoff .box .line{ border-top:1px solid var(--ink); padding-top:6px; font-size:12px; }
+  .signoff .box .line small{ display:block; color:var(--ink-soft); font-size:10.5px; margin-top:2px;}
+
+  .footnote{
+    padding:0 32px 28px;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+  }
+
+  @media (max-width:640px){
+    .head{ grid-template-columns:1fr; }
+    .head-main{ border-right:none; border-bottom:1px solid var(--line); }
+    .memo{ grid-template-columns:repeat(2,1fr); }
+    .stats{ grid-template-columns:repeat(2,1fr); }
+    .signoff{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="corner-bl"></div><div class="corner-br"></div>
+
+  <!-- HEADER -->
+  <div class="head">
+    <div class="head-main">
+      <div class="eyebrow">แผนกบำรุงรักษาระบบไฟฟ้า · MEA</div>
+      <h1>ตารางแผนบำรุงรักษาเชิงป้องกัน<br>หม้อแปลงไฟฟ้าจำหน่าย</h1>
+      <p class="subtitle">สรุปจากระบบ Maximo (PM Module) — สำหรับแนบท้ายบันทึกข้อความ</p>
+    </div>
+    <div class="head-meta">
+      <div class="row"><span class="k">เลขที่เอกสาร</span><span class="v">MEM-PM-2568-011</span></div>
+      <div class="row"><span class="k">วันที่จัดทำ</span><span class="v">06.08.2026</span></div>
+      <div class="row"><span class="k">แผนก / กอง</span><span class="v">พขท.</span></div>
+      <div class="row"><span class="k">อ้างอิงระบบ</span><span class="v">MAXIMO · Plant 7001</span></div>
+    </div>
+  </div>
+
+  <!-- circuit-style rule -->
+  <div class="circuit-rule">
+    <svg viewBox="0 0 1000 10" preserveAspectRatio="none">
+      <line x1="0" y1="5" x2="1000" y2="5" stroke="#C7D2DA" stroke-width="1"/>
+      <circle cx="60" cy="5" r="2.4" fill="#BF7327"/>
+      <circle cx="260" cy="5" r="2.4" fill="#BF7327"/>
+      <circle cx="460" cy="5" r="2.4" fill="#BF7327"/>
+      <circle cx="660" cy="5" r="2.4" fill="#BF7327"/>
+      <circle cx="860" cy="5" r="2.4" fill="#BF7327"/>
+    </svg>
+  </div>
+
+  <!-- STAT STRIP -->
+  <div class="stats">
+    <div class="stat"><div class="num">4</div><div class="label">รายการ PM ทั้งหมด</div></div>
+    <div class="stat ok"><div class="num">4</div><div class="label">สถานะ ACTIVE</div></div>
+    <div class="stat warn"><div class="num">1</div><div class="label">ใกล้ครบกำหนด (&lt; 6 เดือน)</div></div>
+    <div class="stat danger"><div class="num">0</div><div class="label">เลยกำหนดบำรุงรักษา</div></div>
+  </div>
+
+  <!-- CARD SUMMARY -->
+  <div class="section-label">
+    <h2>สรุปรายอุปกรณ์</h2>
+    <span class="tag">ASSET SUMMARY</span>
+  </div>
+  <div class="cards">
+
+    <div class="card">
+      <div class="pm-no">PM11861</div>
+      <h3>หม้อแปลงฯ ซอยพระรามที่ 2-60 พขท.</h3>
+      <div class="meta-line"><span>Asset</span><b>AST1076616 · ST437</b></div>
+      <div class="meta-line"><span>Route</span><b>RTBTTR0001</b></div>
+      <div class="meta-line"><span>ความถี่บำรุงรักษา</span><b>ทุก 3 ปี</b></div>
+      <div class="meta-line"><span>ครบกำหนดถัดไป</span><b>17.10.2028</b></div>
+      <div class="meta-line"><span>สถานะ</span><span class="badge ok">Active</span></div>
+    </div>
+
+    <div class="card">
+      <div class="pm-no">PM11902</div>
+      <h3>หม้อแปลงฯ ถนนสุขุมวิท ซอย 71 พขส.</h3>
+      <div class="meta-line"><span>Asset</span><b>AST1077310 · ST512</b></div>
+      <div class="meta-line"><span>Route</span><b>RTBTTR0002</b></div>
+      <div class="meta-line"><span>ความถี่บำรุงรักษา</span><b>ทุก 3 ปี</b></div>
+      <div class="meta-line"><span>ครบกำหนดถัดไป</span><b>02.01.2027</b></div>
+      <div class="meta-line"><span>สถานะ</span><span class="badge warn">ใกล้ครบกำหนด</span></div>
+    </div>
+
+    <div class="card">
+      <div class="pm-no">PM11955</div>
+      <h3>หม้อแปลงฯ ถนนลาดพร้าว ซอย 94 พขค.</h3>
+      <div class="meta-line"><span>Asset</span><b>AST1078021 · ST488</b></div>
+      <div class="meta-line"><span>Route</span><b>RTBTTR0003</b></div>
+      <div class="meta-line"><span>ความถี่บำรุงรักษา</span><b>ทุก 2 ปี</b></div>
+      <div class="meta-line"><span>ครบกำหนดถัดไป</span><b>19.05.2028</b></div>
+      <div class="meta-line"><span>สถานะ</span><span class="badge ok">Active</span></div>
+    </div>
+
+    <div class="card">
+      <div class="pm-no">PM12004</div>
+      <h3>หม้อแปลงฯ ถนนงามวงศ์วาน จตุจักร พขจ.</h3>
+      <div class="meta-line"><span>Asset</span><b>AST1078654 · ST501</b></div>
+      <div class="meta-line"><span>Route</span><b>RTBTTR0004</b></div>
+      <div class="meta-line"><span>ความถี่บำรุงรักษา</span><b>ทุก 3 ปี</b></div>
+      <div class="meta-line"><span>ครบกำหนดถัดไป</span><b>11.09.2029</b></div>
+      <div class="meta-line"><span>สถานะ</span><span class="badge ok">Active</span></div>
+    </div>
+
+  </div>
+
+  <!-- GRAPHIC SCHEDULE (GANTT-STYLE TIMELINE) -->
+  <div class="section-label">
+    <h2>แผนภาพตารางเวลาบำรุงรักษา</h2>
+    <span class="tag">MAINTENANCE SCHEDULE · 2024–2030</span>
+  </div>
+  <div class="gantt-wrap">
+    <div class="gantt">
+      <div class="gantt-side">
+        <div class="gantt-side-head">รายการ / Asset</div>
+        <div class="gantt-side-row">
+          <span class="pmno">PM11861</span>
+          <span class="name">หม้อแปลงฯ ซอยพระรามที่ 2-60<small>พขท. · ทุก 3 ปี</small><small class="route">Route RTBTTR0001</small></span>
+        </div>
+        <div class="gantt-side-row">
+          <span class="pmno">PM11902</span>
+          <span class="name">หม้อแปลงฯ สุขุมวิท ซอย 71<small>พขส. · ทุก 3 ปี</small><small class="route">Route RTBTTR0002</small></span>
+        </div>
+        <div class="gantt-side-row">
+          <span class="pmno">PM11955</span>
+          <span class="name">หม้อแปลงฯ ลาดพร้าว ซอย 94<small>พขค. · ทุก 2 ปี</small><small class="route">Route RTBTTR0003</small></span>
+        </div>
+        <div class="gantt-side-row">
+          <span class="pmno">PM12004</span>
+          <span class="name">หม้อแปลงฯ งามวงศ์วาน จตุจักร<small>พขจ. · ทุก 3 ปี</small><small class="route">Route RTBTTR0004</small></span>
+        </div>
+      </div>
+
+      <div class="gantt-main">
+        <div class="gantt-axis">
+          <span style="left:0%">2024</span><span style="left:16.67%">2025</span>
+          <span style="left:33.33%">2026</span><span style="left:50%">2027</span>
+          <span style="left:66.67%">2028</span><span style="left:83.33%">2029</span>
+          <span style="left:100%">2030</span>
+        </div>
+
+        <div class="gantt-body">
+          <div class="gantt-grid">
+            <i style="left:0%"></i><i style="left:16.67%"></i><i style="left:33.33%"></i>
+            <i style="left:50%"></i><i style="left:66.67%"></i><i style="left:83.33%"></i><i style="left:100%"></i>
+          </div>
+          <div class="gantt-today" style="left:43.3%"><span>วันนี้ · 06.08.2026</span></div>
+
+          <div class="gantt-row">
+            <div class="gantt-bar ok" style="left:30%; width:50%;">
+              <span class="due-label">17.10.2028</span>
+              <span class="due-marker"></span>
+            </div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-bar warn" style="left:0%; width:50%;">
+              <span class="due-label">02.01.2027</span>
+              <span class="due-marker"></span>
+            </div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-bar ok" style="left:40%; width:33%;">
+              <span class="due-label">19.05.2028</span>
+              <span class="due-marker"></span>
+            </div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-bar ok" style="left:45%; width:50%;">
+              <span class="due-label">11.09.2029</span>
+              <span class="due-marker"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend" style="padding:18px 0 0;">
+      <div class="item"><span class="dot" style="background:var(--ok)"></span>รอบบำรุงรักษาปกติ</div>
+      <div class="item"><span class="dot" style="background:var(--warn)"></span>ใกล้ครบกำหนด (&lt; 6 เดือน)</div>
+      <div class="item"><span class="dot" style="background:var(--danger)"></span>เลยกำหนดบำรุงรักษา</div>
+      <div class="item"><span class="due-marker" style="position:static; transform:none; display:inline-block;"></span>วันครบกำหนดถัดไป (Next Due Date)</div>
+      <div class="item"><span style="width:10px;height:10px;border-left:2px dashed var(--copper);display:inline-block;"></span>วันปัจจุบัน</div>
+    </div>
+  </div>
+
+  <div class="footnote">SOURCE: MAXIMO PM MODULE · PLANT 7001 · SITE MEA — ข้อมูล PM11861 ดึงจากระบบจริง / รายการอื่นเป็นตัวอย่างรูปแบบตาราง โปรดแทนที่ด้วยข้อมูลจริงจากระบบ</div>
+
+</div>
+
+</body>
+</html>
