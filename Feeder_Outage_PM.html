@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEA มีนบุรี — Outage Intelligence &amp; PM Planning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F6FA;
+    --bg-grid: radial-gradient(circle at 1px 1px, rgba(22,32,46,0.055) 1px, transparent 0);
+    --panel:#FFFFFF;
+    --panel-alt:#F0F3F8;
+    --border:#DCE3ED;
+    --border-soft:#E7ECF3;
+    --text:#16202E;
+    --text-dim:#5B6B82;
+    --text-faint:#8D99AD;
+    --amber:#B06B00;
+    --cyan:#0B7285;
+    --danger:#C6362F;
+    --good:#178A4F;
+    --c-animal:#F2A93B;
+    --c-vegetation:#6FBE63;
+    --c-equipment:#E8544E;
+    --c-external:#C3945F;
+    --c-weather:#4FA6E8;
+    --c-system:#A970D6;
+    --c-unknown:#6B7A99;
+    --c-other:#8C9AB5;
+    --radius:10px;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --disp:'Space Grotesk', 'IBM Plex Sans Thai', sans-serif;
+    --sans:'IBM Plex Sans Thai', 'Noto Sans Thai', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(180deg, rgba(11,114,133,0.05), transparent 320px),
+      var(--bg-grid) 0 0 / 22px 22px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:rgba(176,107,0,0.30); }
+  a{color:var(--cyan);}
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 80px;}
+
+  /* ---------- header ---------- */
+  header.top{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px;
+    padding-bottom:22px; margin-bottom:22px; border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--cyan);
+    text-transform:uppercase; margin:0 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan); display:inline-block;}
+  h1{
+    font-family:var(--disp); font-weight:600; font-size:28px; margin:0 0 6px; letter-spacing:-.01em;
+  }
+  h1 .accent{color:var(--amber);}
+  .subtitle{color:var(--text-dim); font-size:13.5px; max-width:620px;}
+  .period-box{
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    text-align:right; border:1px solid var(--border); border-radius:var(--radius);
+    padding:10px 14px; background:var(--panel); min-width:200px;
+  }
+  .period-box b{color:var(--text); font-weight:600; display:block; font-size:13px; margin-bottom:2px;}
+
+  /* ---------- KPI strip ---------- */
+  .kpi-strip{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px;}
+  .kpi{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; position:relative; overflow:hidden; box-shadow:0 1px 2px rgba(16,32,50,.04);
+  }
+  .kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);opacity:.7;}
+  .kpi.warn::before{background:var(--amber);}
+  .kpi .label{font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+  .kpi .value{font-family:var(--mono); font-size:24px; font-weight:600; color:var(--text);}
+  .kpi .value small{font-size:13px; color:var(--text-dim); font-weight:400;}
+
+  /* ---------- panel base ---------- */
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(16,32,50,.05);
+  }
+  .panel-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap;}
+  .panel-title{font-family:var(--disp); font-size:15px; font-weight:600; letter-spacing:.01em; display:flex; align-items:center; gap:8px;}
+  .panel-title .idx{font-family:var(--mono); color:var(--text-faint); font-size:12px;}
+  .panel-desc{font-size:12px; color:var(--text-dim); margin-top:2px;}
+
+  /* ---------- signature: feeder health grid ---------- */
+  .grid-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--text-dim);}
+  .grid-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .mosaic{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(52px,1fr)); gap:6px; margin-top:6px;
+  }
+  .cell{
+    aspect-ratio:1/1; border-radius:6px; position:relative; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:9.5px; color:rgba(10,14,22,.78); font-weight:700;
+    border:1px solid rgba(16,32,50,.08);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .cell:hover{transform:translateY(-2px) scale(1.06); box-shadow:0 6px 16px rgba(16,32,50,.22); z-index:2;}
+  .cell.selected{outline:2px solid var(--text); outline-offset:1px;}
+  .cell.beta-flag{box-shadow:0 0 0 2.5px var(--danger) inset;}
+  .cell .beta-mark{
+    position:absolute; top:-6px; right:-6px; font-size:16px; line-height:1;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));
+  }
+  .wpf-badge{
+    display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700;
+    color:var(--danger); background:rgba(198,54,47,.13); border-radius:10px; padding:2px 6px;
+    margin-left:6px; cursor:help; white-space:nowrap;
+  }
+  .cell .fname{position:absolute; bottom:-16px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--text-faint); white-space:nowrap; opacity:0; transition:opacity .12s;}
+  .cell:hover .fname{opacity:1;}
+  .mosaic-note{
+    margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);
+    font-size:11.5px; color:var(--text-faint); line-height:1.7;
+  }
+  .mosaic-note b{color:var(--text-dim);}
+
+  .method-toggle-btn{
+    margin-top:16px; background:var(--panel-alt); border:1px solid var(--border); color:var(--cyan);
+    padding:8px 14px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;
+    font-family:var(--sans); display:inline-flex; align-items:center; gap:8px; transition:all .12s;
+  }
+  .method-toggle-btn:hover{border-color:var(--cyan); background:rgba(11,114,133,.06);}
+  .method-toggle-btn.open{margin-bottom:0;}
+  #methodToggleArrow{transition:transform .15s; font-size:10px;}
+  .method-toggle-btn.open #methodToggleArrow{transform:rotate(180deg);}
+
+  .method-flow-title{
+    font-family:var(--mono); font-size:11.5px; font-weight:600; color:var(--danger);
+    text-transform:uppercase; letter-spacing:.04em; margin:4px 0 14px;
+  }
+  .method-flow{display:flex; flex-direction:column; align-items:center; max-width:520px; margin:0 auto;}
+  .mf-step{
+    width:100%; background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; display:flex; align-items:center; gap:12px; box-shadow:0 1px 2px rgba(16,32,50,.04);
+  }
+  .mf-num{
+    flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--cyan); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:12px;
+  }
+  .mf-decision .mf-num{background:var(--amber);}
+  .mf-flag{border-color:var(--danger); background:rgba(198,54,47,.06);}
+  .mf-flag .mf-num{background:var(--danger); font-size:14px;}
+  .mf-body{display:flex; flex-direction:column; gap:2px;}
+  .mf-body b{font-size:12.5px; color:var(--text); font-weight:600;}
+  .mf-body span{font-size:11px; color:var(--text-dim);}
+  .mf-arrow{font-family:var(--mono); font-size:11px; color:var(--text-faint); padding:4px 0;}
+  .mf-arrow-flag{color:var(--danger); font-weight:600;}
+  .mf-branch{
+    width:100%; margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-soft);
+    font-size:11px; color:var(--text-faint);
+  }
+  .mf-branch-no{flex-basis:100%;}
+  .mf-decision{flex-wrap:wrap;}
+
+  /* ---------- filter bar ---------- */
+  .filter-bar{
+    display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:14px 20px;
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px;
+  }
+  .filter-group{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .filter-label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-family:var(--mono);}
+  input#feederSearch{
+    background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:6px;
+    padding:7px 10px; font-family:var(--mono); font-size:12.5px; width:150px; outline:none;
+  }
+  input#feederSearch:focus{border-color:var(--cyan);}
+  .chip{
+    border:1px solid var(--border); background:transparent; color:var(--text-dim);
+    padding:5px 10px; border-radius:20px; font-size:11.5px; cursor:pointer; font-family:var(--sans);
+    display:inline-flex; align-items:center; gap:6px; transition:all .12s;
+  }
+  .chip:hover{border-color:var(--text-dim); color:var(--text);}
+  .chip.active{background:rgba(16,32,50,.055); color:var(--text); border-color:currentColor;}
+  .chip .dot{width:7px;height:7px;border-radius:50%;}
+  .reset-btn{
+    margin-left:auto; background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    padding:7px 12px; border-radius:6px; font-size:12px; cursor:pointer; font-family:var(--sans);
+  }
+  .reset-btn:hover{color:var(--danger); border-color:var(--danger);}
+
+  /* ---------- two column layout ---------- */
+  .cols{display:grid; grid-template-columns:1.55fr 1fr; gap:16px; align-items:start;}
+  @media (max-width:980px){ .cols{grid-template-columns:1fr;} .kpi-strip{grid-template-columns:repeat(2,1fr);} }
+
+  .trend-chart{width:100%;}
+  .trend-chart svg{width:100%; display:block; overflow:visible;}
+  .trend-chart .tc-area{fill:rgba(11,114,133,0.12);}
+  .trend-chart .tc-line{fill:none; stroke:var(--cyan); stroke-width:2;}
+  .trend-chart .tc-grid{stroke:var(--border-soft); stroke-width:1;}
+  .trend-chart .tc-axis-label{fill:var(--text-faint); font-family:'IBM Plex Mono', monospace; font-size:9.5px;}
+  .trend-chart .tc-dot{fill:var(--panel); stroke:var(--cyan); stroke-width:1.6; opacity:0; transition:opacity .1s;}
+  .trend-chart .tc-hover-line{stroke:var(--cyan); stroke-width:1; stroke-dasharray:3 3; opacity:0;}
+  .trend-chart .tc-tooltip{
+    position:absolute; background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:5px 9px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text);
+    pointer-events:none; opacity:0; transform:translate(-50%,-120%); transition:opacity .1s; white-space:nowrap;
+    box-shadow:0 4px 12px rgba(16,32,50,.12);
+  }
+  .trend-chart .tc-wrap{position:relative;}
+
+  /* ---------- table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  thead th{
+    text-align:left; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-faint); font-weight:500; padding:8px 8px; border-bottom:1px solid var(--border);
+    cursor:pointer; white-space:nowrap; user-select:none;
+  }
+  thead th:hover{color:var(--cyan);}
+  thead th.sorted{color:var(--cyan);}
+  tbody td{padding:9px 8px; border-bottom:1px solid var(--border-soft); vertical-align:middle;}
+  tbody tr{cursor:pointer;}
+  tbody tr:hover{background:rgba(11,114,133,.05);}
+  .feeder-code{font-family:var(--mono); font-weight:600; color:var(--text);}
+  .num{font-family:var(--mono); text-align:right;}
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:12px; font-size:10.5px; font-family:var(--sans);
+    font-weight:600; white-space:nowrap;
+  }
+  .badge.tier-high{background:rgba(198,54,47,.13); color:var(--danger);}
+  .badge.tier-med{background:rgba(176,107,0,.14); color:var(--amber);}
+  .badge.tier-low{background:rgba(23,138,79,.13); color:var(--good);}
+  .cat-pill{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim);
+  }
+  .score-bar-wrap{width:70px; height:6px; background:var(--border-soft); border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; margin-right:6px;}
+  .score-bar{height:100%; border-radius:4px;}
+  .detail-row td{background:var(--panel-alt); padding:14px 16px; cursor:default;}
+  .detail-row:hover{background:var(--panel-alt);}
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .action-box{
+    border-left:3px solid var(--amber); padding:8px 12px; background:rgba(176,107,0,.07); border-radius:0 6px 6px 0;
+    font-size:12.5px; margin-bottom:10px;
+  }
+  .action-box b{display:block; font-size:11px; color:var(--amber); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; font-family:var(--mono);}
+  .event-list{max-height:180px; overflow-y:auto; font-size:11.5px;}
+  .event-list div{padding:4px 0; border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; gap:8px; color:var(--text-dim);}
+  .event-list .ev-cause{color:var(--text);}
+  .show-more{text-align:center; padding:10px; color:var(--text-dim); font-size:12px; cursor:pointer; border-top:1px solid var(--border);}
+  .show-more:hover{color:var(--cyan);}
+
+  /* cause bars */
+  .cat-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .cat-row .cname{width:130px; font-size:12px; color:var(--text-dim); flex-shrink:0; display:flex; align-items:center; gap:6px;}
+  .cat-row .bar-track{flex:1; height:9px; background:var(--border-soft); border-radius:4px; overflow:hidden;}
+  .cat-row .bar-fill{height:100%; border-radius:4px;}
+  .cat-row .cval{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); width:70px; text-align:right; flex-shrink:0;}
+
+  .comp-list div, .hotspot-list div{
+    display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid var(--border-soft); font-size:12px;
+  }
+  .comp-list div span:first-child, .hotspot-list div span:first-child{color:var(--text);}
+  .comp-list div span:last-child, .hotspot-list div span:last-child{font-family:var(--mono); color:var(--text-dim);}
+  .hotspot-list .hs-feeder{font-family:var(--mono); color:var(--cyan); margin-right:6px; font-weight:600;}
+
+  .dl-btn{
+    background:var(--amber); color:#1b1204; border:none; padding:9px 16px; border-radius:6px;
+    font-family:var(--sans); font-weight:600; font-size:12.5px; cursor:pointer;
+  }
+  .dl-btn:hover{filter:brightness(1.08);}
+  .footer-note{color:var(--text-faint); font-size:11.5px; margin-top:24px; border-top:1px solid var(--border); padding-top:16px; line-height:1.7;}
+  .footer-note b{color:var(--text-dim);}
+  .foot-row{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap;}
+
+  .empty-msg{color:var(--text-faint); font-size:12.5px; padding:20px 0; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <p class="eyebrow"><span class="dot"></span>FEEDER RELIABILITY &amp; PM PLANNING : by Dr. Jupetor</p>
+      <h1>สถิติไฟฟ้าดับ <span class="accent">·</span> Outage Intelligence for Maintenance Planning</h1>
+      <p class="subtitle">วิเคราะห์ข้อมูลไฟฟ้าดับรายฟีดเดอร์เพื่อจัดลำดับความสำคัญและวางแผนบำรุงรักษาเชิงป้องกัน (PM)</p>
+    </div>
+    <div class="period-box" id="periodBox">
+      <b>—</b>
+      ยังไม่มีข้อมูล
+    </div>
+  </header>
+
+  <div class="filter-bar" id="sourceBar" style="margin-bottom:14px;">
+    <div class="filter-group">
+      <span class="filter-label">Data Source</span>
+      <button class="chip" id="loadFileBtn" style="border-color:var(--cyan); color:var(--cyan);">⬆ โหลดไฟล์ข้อมูลไฟฟ้าดับ (.xlsx / .csv)</button>
+      <input type="file" id="fileInput" accept=".xlsx,.csv" style="display:none;">
+      <button class="chip" id="resetDataBtn" style="display:none; border-color:var(--danger); color:var(--danger);">↺ ล้างข้อมูล / โหลดไฟล์ใหม่</button>
+    </div>
+    <span id="uploadStatus" style="font-size:11.5px; color:var(--text-dim);"></span>
+  </div>
+
+  <div class="panel" id="emptyState" style="text-align:center; padding:64px 24px;">
+    <div style="font-size:34px; margin-bottom:10px;">⬆📊</div>
+    <div class="panel-title" style="justify-content:center; font-size:17px; margin-bottom:8px;">ยังไม่มีข้อมูลให้วิเคราะห์</div>
+    <div class="panel-desc" style="max-width:480px; margin:0 auto 18px;">
+      กดปุ่ม "โหลดไฟล์ข้อมูลไฟฟ้าดับ" ด้านบนเพื่ออัปโหลดไฟล์ .xlsx หรือ .csv ที่มีคอลัมน์ Date, Feeder, Minutes, Causes, Component, Lateral (รูปแบบเดียวกับรายงานไฟฟ้าดับของการไฟฟ้านครหลวง) ระบบจะประมวลผลทั้งหมดในเบราว์เซอร์ ไม่มีการส่งข้อมูลออกไปที่ใด
+    </div>
+    <button class="dl-btn" id="emptyStateLoadBtn">⬆ เลือกไฟล์เพื่อเริ่มต้น</button>
+  </div>
+
+  <div id="dashboardContent" style="display:none;">
+
+  <div class="kpi-strip" id="kpiStrip"></div>
+
+  <div class="panel" id="mosaicPanel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title"><span class="idx">01</span> Feeder Health Grid</div>
+        <div class="panel-desc">แต่ละช่องคือ 1 ฟีดเดอร์ — สีบ่งบอกสาเหตุหลัก ความสว่างบ่งบอกระดับความสำคัญของการทำ PM (คลิกเพื่อกรอง)</div>
+      </div>
+      <div class="grid-legend" id="gridLegend"></div>
+    </div>
+    <div class="mosaic" id="mosaic"></div>
+    <button class="method-toggle-btn" id="methodToggleBtn">ℹ️ วิธีคำนวณ Feeder Health Grid <span id="methodToggleArrow">▾</span></button>
+    <div class="mosaic-note" id="mosaicNote" style="display:none;">
+      <p style="margin:0 0 12px;"><b>สี</b> ของแต่ละช่องมาจากหมวดสาเหตุที่เกิดบ่อยที่สุด (Dominant Cause) ของฟีดเดอร์นั้น · <b>ความสว่าง/ความเข้ม</b> แปรผันตาม Priority Score (0–100) ซึ่งคำนวณจาก จำนวนครั้งที่เกิด 40% + นาทีไฟดับสะสม 25% + จำนวนครั้งใน 12 เดือนล่าสุด 35% โดย normalize เทียบกับฟีดเดอร์อื่นในชุดข้อมูลที่กรองอยู่ (คะแนนสูง = ทึบ/เข้ม, คะแนนต่ำ = จาง) · ตัวเลขในช่องคือจำนวนเหตุการณ์ไฟดับทั้งหมดของฟีดเดอร์นั้น</p>
+
+      <div class="method-flow-title">⚡ วิธีติดธง Worst-Performing — IEEE 1366 Beta Method (β=2.5)</div>
+      <div class="method-flow">
+        <div class="mf-step">
+          <div class="mf-num">1</div>
+          <div class="mf-body"><b>นับจำนวนเหตุการณ์ไฟดับ</b><span>แยกตามฟีดเดอร์ ในแต่ละปี</span></div>
+        </div>
+        <div class="mf-arrow">↓</div>
+        <div class="mf-step mf-decision">
+          <div class="mf-num">?</div>
+          <div class="mf-body"><b>ฟีดเดอร์ในปีนั้นมี ≥ 5 เส้นหรือไม่</b><span>ตรวจสอบจำนวนตัวอย่างขั้นต่ำ</span></div>
+          <div class="mf-branch mf-branch-no">ไม่ (&lt;5) → ข้ามปีนี้ ไม่คำนวณธง</div>
+        </div>
+        <div class="mf-arrow">↓ ใช่ (≥5)</div>
+        <div class="mf-step">
+          <div class="mf-num">2</div>
+          <div class="mf-body"><b>ปรับข้อมูลปีที่ไม่ครบ 350 วัน</b><span>แปลงเป็น ln(x) หา mean และ std</span></div>
+        </div>
+        <div class="mf-arrow">↓</div>
+        <div class="mf-step">
+          <div class="mf-num">3</div>
+          <div class="mf-body"><b>คำนวณ threshold</b><span>= exp( mean + 2.5 × std )</span></div>
+        </div>
+        <div class="mf-arrow">↓</div>
+        <div class="mf-step mf-decision">
+          <div class="mf-num">?</div>
+          <div class="mf-body"><b>count × scale มากกว่า threshold หรือไม่</b><span>เทียบกับฟีดเดอร์ทั้งหมดในปีนั้น</span></div>
+          <div class="mf-branch mf-branch-no">ไม่เกิน threshold → ไม่ติดธง</div>
+        </div>
+        <div class="mf-arrow mf-arrow-flag">↓ เกิน threshold</div>
+        <div class="mf-step mf-flag">
+          <div class="mf-num">⚡</div>
+          <div class="mf-body"><b>ติดธง Worst-Performing</b><span>แสดงกรอบแดง + ⚡ บนช่องฟีดเดอร์นั้น ในปีที่เกิน threshold</span></div>
+        </div>
+      </div>
+
+      <p style="margin:12px 0 0; color:var(--text-faint);"><b>ข้อจำกัด:</b> ใช้จำนวนครั้งไฟดับ/ปีแทน SAIFI เนื่องจากไม่มีจำนวนลูกค้าต่อฟีดเดอร์ ผลลัพธ์คือความผิดปกติทางสถิติเทียบกับกลุ่ม ไม่ใช่ SAIFI ตามนิยามมาตรฐาน</p>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Feeder</span>
+      <input id="feederSearch" type="text" placeholder="เช่น MMR-421">
+    </div>
+    <div class="filter-group" id="yearChips">
+      <span class="filter-label">Year</span>
+    </div>
+    <div class="filter-group" id="catChips">
+      <span class="filter-label">Cause</span>
+    </div>
+    <div class="filter-group">
+      <button class="chip" id="betaOnlyChip" style="border-color:var(--danger); color:var(--danger);">⚡ Worst-Performing เท่านั้น</button>
+    </div>
+    <button class="reset-btn" id="resetBtn">ล้างตัวกรอง ✕</button>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title"><span class="idx">02</span> Monthly Outage Trend</div>
+            <div class="panel-desc">จำนวนเหตุการณ์ไฟฟ้าดับต่อเดือน ตามช่วงเวลาที่กรอง</div>
+          </div>
+        </div>
+        <div id="trendChart" class="trend-chart"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title"><span class="idx">03</span> PM Priority Ranking</div>
+            <div class="panel-desc">จัดลำดับฟีดเดอร์ตามคะแนนความเสี่ยง (ความถี่ + ผลกระทบ + แนวโน้มล่าสุด) — คลิกแถวเพื่อดูรายละเอียด</div>
+          </div>
+          <button class="dl-btn" id="dlBtn">⬇ ดาวน์โหลดแผน PM (CSV)</button>
+        </div>
+        <table id="rankTable">
+          <thead>
+            <tr>
+              <th data-key="feeder">Feeder</th>
+              <th data-key="events" class="num">Events</th>
+              <th data-key="minutes" class="num">Minutes</th>
+              <th data-key="recent" class="num">Last 12mo</th>
+              <th data-key="cat">สาเหตุหลัก</th>
+              <th data-key="score" class="sorted">Priority</th>
+              <th>คำแนะนำ PM</th>
+            </tr>
+          </thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+        <div class="show-more" id="showMoreBtn"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="idx">04</span> สาเหตุการเกิดเหตุ</div>
+        </div>
+        <div id="catBreakdown"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="idx">05</span> อุปกรณ์ที่ชำรุดบ่อยที่สุด</div>
+        </div>
+        <div class="comp-list" id="compList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="idx">06</span> จุดเกิดเหตุซ้ำ (Hotspots)</div>
+          <div class="panel-desc">ตำแหน่ง/สายย่อยเดียวกันที่เกิดไฟดับซ้ำตั้งแต่ 2 ครั้งขึ้นไป — เป้าหมาย PM เชิงพื้นที่</div>
+        </div>
+        <div class="hotspot-list" id="hotspotList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <div class="foot-row">
+      <div>
+        <b>วิธีคำนวณ Priority Score:</b> คะแนน 0–100 ผสมจาก จำนวนครั้งที่เกิด (40%) + นาทีไฟดับสะสม (25%) + จำนวนครั้งใน 12 เดือนล่าสุด (35%) โดย normalize เทียบกับฟีดเดอร์อื่นในชุดข้อมูลที่กรองอยู่ · High ≥ 70, Medium 40–69, Low &lt; 40<br>
+        <b>⚡ Worst-Performing (สถิติ):</b> ใช้ IEEE 1366 "Beta Method" (β=2.5) — ต่อปี คำนวณ threshold = exp(mean(ln x) + 2.5×std(ln x)) จากจำนวนไฟดับของฟีดเดอร์ทั้งหมดในปีนั้น ฟีดเดอร์ที่เกิน threshold จะถูกติดธง คำนวณเฉพาะปีที่มีฟีดเดอร์ที่มีเหตุการณ์ ≥5 เส้น (เพื่อให้สถิติมีความหมาย) และปีที่ข้อมูลไม่ครบ 12 เดือน (เช่นปีล่าสุด) จะถูกปรับเป็นอัตรารายปี (annualize) ก่อนเทียบ threshold เพื่อไม่ให้ปีสั้นดูรุนแรงเกินจริง <b>ข้อจำกัด:</b> มาตรฐานนี้ออกแบบมาให้ใช้กับ SAIFI ที่ถ่วงน้ำหนักด้วยจำนวนลูกค้าที่ได้รับผลกระทบ แต่ข้อมูลชุดนี้ไม่มีจำนวนลูกค้าต่อฟีดเดอร์ จึงใช้ "จำนวนครั้งไฟดับ/ปี" เป็นตัวแทนแทน — ผลลัพธ์คือฟีดเดอร์ที่ผิดปกติทางสถิติเทียบกับกลุ่ม ไม่ใช่ SAIFI ตามนิยามมาตรฐานเป๊ะๆ<br>
+        <b>หมวดสาเหตุ:</b> สัตว์รบกวน / ต้นไม้-กิ่งไม้ / อุปกรณ์เสื่อมสภาพ / ปัจจัยภายนอก-บุคคล / ฟ้าผ่า-สภาพอากาศ / ฟอลต์ร่วมระบบ / ไม่ทราบสาเหตุ / อื่น ๆ — จัดกลุ่มจากคอลัมน์ Causes ในไฟล์ต้นฉบับ<br>
+        <b>ที่มาข้อมูล:</b> ไฟล์ .xlsx/.csv ที่ผู้ใช้อัปโหลด — เครื่องมือนี้ประมวลผลทั้งหมดในเบราว์เซอร์ ไม่มีการส่งข้อมูลออกไปที่ใด
+      </div>
+      <div style="min-width:220px;">
+        <b>ข้อจำกัด:</b> คะแนนและธง Worst-Performing เป็นตัวช่วยจัดลำดับความสำคัญเบื้องต้นจากข้อมูลในอดีต ไม่ใช่ข้อสรุปทางวิศวกรรม ควรใช้ร่วมกับดุลยพินิจของวิศวกรประจำพื้นที่และการตรวจสอบภาคสนามก่อนวางแผน PM จริง
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const CAT = {
+  ANIMAL:      { label:'สัตว์รบกวน',              color:'#F2A93B', action:'ติดตั้ง/ตรวจสอบอุปกรณ์ป้องกันสัตว์ (Animal Guard, Bird Guard) และหุ้มฉนวนจุดเสี่ยงบนเสาที่เกิดซ้ำ' },
+  VEGETATION:  { label:'ต้นไม้ / กิ่งไม้',          color:'#6FBE63', action:'จัดคิวตัดแต่งกิ่งไม้แนวสายไฟ (ROW Clearing) ก่อนฤดูฝน/ลมแรง โดยเฉพาะจุดที่เกิดซ้ำ' },
+  EQUIPMENT:   { label:'อุปกรณ์เสื่อมสภาพ/ชำรุด',  color:'#E8544E', action:'ตรวจสอบ Thermoscan/Corona และวางแผนเปลี่ยนอุปกรณ์ตามอายุใช้งาน (ฟิวส์ ล่อฟ้า บุชชิ่ง หม้อแปลง)' },
+  EXTERNAL:    { label:'ปัจจัยภายนอก/บุคคล',       color:'#C3945F', action:'ประสานหน่วยงาน/ผู้รับเหมา ตรวจระยะห่างจากสิ่งปลูกสร้างและพื้นที่ก่อสร้างใกล้แนวสาย' },
+  WEATHER:     { label:'ฟ้าผ่า/สภาพอากาศ',         color:'#4FA6E8', action:'ตรวจสอบระบบล่อฟ้า (Arrester) และพิจารณาเพิ่มจุด Sectionalizing เพื่อลดผลกระทบ' },
+  SYSTEM:      { label:'ฟอลต์ร่วมระบบ',            color:'#A970D6', action:'ตรวจสอบการประสานงานรีเลย์ (Relay Coordination) กับสายป้อน/สถานีที่จ่ายโหลดร่วมกัน' },
+  UNKNOWN:     { label:'ไม่ทราบสาเหตุ',            color:'#6B7A99', action:'ติดตั้ง Fault Indicator เพิ่มรอบตรวจ Patrol/Thermoscan เพื่อสืบหาสาเหตุที่แฝงอยู่' },
+  OTHER:       { label:'อื่น ๆ',                    color:'#8C9AB5', action:'ตรวจสอบเชิงป้องกันตามความเหมาะสมของแต่ละกรณี' },
+};
+const PREVENTABLE = new Set(['ANIMAL','VEGETATION','EQUIPMENT']);
+
+// cause text -> category id (mirrors the taxonomy used to prep the built-in dataset;
+// unmapped causes gracefully fall back to OTHER so unfamiliar templates still work)
+const CAUSE_TO_CAT = {
+  'ไม่ทราบสาเหตุ':'UNKNOWN',
+  'นก':'ANIMAL','กระรอก, กระแต, หนู':'ANIMAL','งู':'ANIMAL','แมว':'ANIMAL','อื่น ๆ (สัตว์)':'ANIMAL',
+  'กิ่งไม้':'VEGETATION','กิ่งไม้หัก':'VEGETATION','ต้นไม้ล้ม':'VEGETATION',
+  'ฟิวส์และอุปกรณ์ร่วม':'EQUIPMENT','สายชำรุด':'EQUIPMENT','กับดักฟ้าผ่า':'EQUIPMENT','สายไฟฟ้าขาด':'EQUIPMENT',
+  'หม้อแปลง':'EQUIPMENT','สายใต้ดินชำรุด':'EQUIPMENT','อุปกรณ์จับยึด':'EQUIPMENT','สวิตซ์ใบมีด':'EQUIPMENT',
+  'TERMINATOR/RISER':'EQUIPMENT','หม้อแปลงกระแส':'EQUIPMENT','สวิตซ์ใบมีด (ON-LOAD)':'EQUIPMENT',
+  'หม้อแปลงแรงดัน':'EQUIPMENT','เสาล้ม':'EQUIPMENT','มิเตอร์แรงสูง':'EQUIPMENT','ลูกถ้วย':'EQUIPMENT',
+  'คาปาซิเตอร์':'EQUIPMENT','กลไกในการทำงานของเซอร์กิตเบรคเกอร์':'EQUIPMENT','สายป้องกันฟ้าผ่า':'EQUIPMENT',
+  'อื่น ๆ (อุปกรณ์อื่น ๆ)':'EQUIPMENT',
+  'สาเหตุจากลูกค้า':'EXTERNAL','โหลดฝาก':'EXTERNAL','รถชน':'EXTERNAL','ป้ายโฆษณา':'EXTERNAL',
+  'บุคคลภายนอก':'EXTERNAL','รถเกี่ยวสายไฟฟ้า':'EXTERNAL','รถขุดดิน':'EXTERNAL','ทำงานซ่อมสาย':'EXTERNAL',
+  'ปลดวัสดุแปลกปลอมออกจากสาย':'EXTERNAL','ลูกโป่ง':'EXTERNAL','แผ่นสังกะสี':'EXTERNAL',
+  'พนักงานการไฟฟ้าเขต':'EXTERNAL','ทำงานเกี่ยวกับใบมีด':'EXTERNAL','ทำงานเกี่ยวกับเสา':'EXTERNAL',
+  'ไฟสาธารณะ':'EXTERNAL','อื่น ๆ (วัสดุแปลกปลอม)':'EXTERNAL','ลมพัดวัสดุติดสาย':'EXTERNAL',
+  'ฟ้าผ่า':'WEATHER','ไฟไหม้ (ปลดสวิทซ์)':'WEATHER','ไฟไหม้ (สวิทซ์ตกอัตโนมัติ)':'WEATHER',
+  'สวิตช์ตกขณะ Switching':'WEATHER','อื่น ๆ (สภาวะแวดล้อม)':'WEATHER',
+  'ฟอลต์ในสายป้อน/สถานีอื่นที่จ่ายโหลดร่วมกัน':'SYSTEM','ฟอลต์ในสายป้อน/สถานีอื่นที่จ่ายโหลดจากบัสเดียวกัน':'SYSTEM',
+  'ไม้คอน':'OTHER','เครน':'OTHER','สายพันกัน หรือแตะกัน':'OTHER','อื่น ๆ (สายอากาศ)':'OTHER',
+};
+function categorize(causeRaw){
+  const norm = (causeRaw||'').replace(/\u00A0/g,' ').trim();
+  return CAUSE_TO_CAT[norm] || 'OTHER';
+}
+
+// ---- dataset (mutable — nothing loaded until the user uploads a file) ----
+let data, maxDate, minDate, cutoffStr, allYears, allCats, datasetLabel;
+
+function applyDataset(records, label){
+  if(!records || records.length===0){
+    setUploadStatus('ไม่พบข้อมูลที่อ่านได้ในไฟล์นี้ ตรวจสอบว่าคอลัมน์หัวตาราง (Date, Feeder, Minutes, Causes) ตรงกับไฟล์ต้นฉบับ', true);
+    return;
+  }
+  data = records;
+  datasetLabel = label;
+  maxDate = data.reduce((m,d)=> d.date > m ? d.date : m, data[0].date);
+  minDate = data.reduce((m,d)=> d.date < m ? d.date : m, data[0].date);
+  const maxDateObj = new Date(maxDate);
+  const cutoff12 = new Date(maxDateObj); cutoff12.setDate(cutoff12.getDate()-365);
+  cutoffStr = cutoff12.toISOString().slice(0,10);
+  allYears = [...new Set(data.map(d=>d.year))].sort();
+  allCats = Object.keys(CAT).filter(c => data.some(d=>d.cat===c));
+
+  state.feederQuery=''; document.getElementById('feederSearch').value='';
+  state.years = new Set(allYears); state.cats = new Set(allCats); state.rankLimit = 15;
+  state.betaOnly = false; document.getElementById('betaOnlyChip').classList.remove('active');
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboardContent').style.display = 'block';
+  document.getElementById('resetDataBtn').style.display = 'inline-flex';
+
+  document.getElementById('periodBox').innerHTML =
+    `<b>${minDate} → ${maxDate}</b>${data.length.toLocaleString()} เหตุการณ์ · ${new Set(data.map(d=>d.feeder)).size} ฟีดเดอร์ · ${label}`;
+
+  renderLegend();
+  rerender();
+}
+
+// ---- state ----
+const state = { feederQuery:'', years:new Set(), cats:new Set(), rankLimit:15, sortKey:'score', sortDir:-1, betaOnly:false };
+
+function filteredData(){
+  return data.filter(d =>
+    (state.feederQuery==='' || d.feeder.toLowerCase().includes(state.feederQuery.toLowerCase())) &&
+    state.years.has(d.year) && state.cats.has(d.cat)
+  );
+}
+
+function norm(v,min,max){ return max>min ? (v-min)/(max-min) : (max>0?1:0); }
+
+const BETA = 2.5;         // IEEE 1366 recommended beta for Worst-Performing Feeder identification
+const MIN_FEEDERS_FOR_BETA = 5; // minimum feeders with activity in a year for the log-normal stats to be meaningful
+
+// IEEE 1366 "Beta Method": per year, threshold = exp(mean(ln x) + BETA*std(ln x))
+// over feeders with x>0 that year; any feeder above threshold is flagged.
+// NOTE: this uses outage-event COUNT per feeder-year as a proxy for SAIFI, since this
+// dataset has no per-feeder customer counts to compute true SAIFI. Documented in the UI.
+// Partial years (e.g. the most recent year, if the data cuts off mid-year) are annualized
+// (scaled to a 365-day rate) before the log-normal comparison, otherwise a short year yields
+// an artificially low threshold and over-flags feeders that just happened to have an early spike.
+function computeBetaFlags(rows){
+  const byYear = new Map();
+  rows.forEach(d=>{
+    if(!byYear.has(d.year)) byYear.set(d.year, new Map());
+    const fm = byYear.get(d.year);
+    fm.set(d.feeder, (fm.get(d.feeder)||0)+1);
+  });
+  const flagMap = new Map();      // feeder -> Set(years flagged)
+  const yearStats = {};           // year -> {threshold, n, skipped, scaleFactor}
+  byYear.forEach((fm, year)=>{
+    const counts = [...fm.values()];
+    if(counts.length < MIN_FEEDERS_FOR_BETA){ yearStats[year] = {skipped:true, n:counts.length}; return; }
+
+    const yearDates = rows.filter(d=>d.year===year).map(d=>d.date);
+    const spanDays = (new Date(Math.max(...yearDates.map(d=>new Date(d)))) - new Date(Math.min(...yearDates.map(d=>new Date(d)))))/86400000 + 1;
+    const scaleFactor = spanDays < 350 ? 365/spanDays : 1; // annualize partial years only
+
+    const lns = counts.map(c=>Math.log(c*scaleFactor));
+    const mean = lns.reduce((a,b)=>a+b,0)/lns.length;
+    const variance = lns.reduce((a,b)=>a+(b-mean)*(b-mean),0)/lns.length;
+    const std = Math.sqrt(variance);
+    const threshold = Math.exp(mean + BETA*std);
+    yearStats[year] = {threshold, n:counts.length, skipped:false, scaleFactor};
+    fm.forEach((count, feeder)=>{
+      if(count*scaleFactor > threshold){
+        if(!flagMap.has(feeder)) flagMap.set(feeder, new Set());
+        flagMap.get(feeder).add(year);
+      }
+    });
+  });
+  return { flagMap, yearStats };
+}
+
+function computeFeederAgg(rows){
+  const { flagMap } = computeBetaFlags(rows);
+  const map = new Map();
+  rows.forEach(d=>{
+    if(!map.has(d.feeder)) map.set(d.feeder, {feeder:d.feeder, events:0, minutes:0, recent:0, catCounts:{}, rows:[]});
+    const f = map.get(d.feeder);
+    f.events++; f.minutes += d.minutes; f.rows.push(d);
+    if(d.date >= cutoffStr) f.recent++;
+    f.catCounts[d.cat] = (f.catCounts[d.cat]||0)+1;
+  });
+  const arr = [...map.values()];
+  const maxE = Math.max(...arr.map(f=>f.events),1);
+  const maxM = Math.max(...arr.map(f=>f.minutes),1);
+  const maxR = Math.max(...arr.map(f=>f.recent),1);
+  arr.forEach(f=>{
+    f.score = Math.round(100*(0.40*norm(f.events,0,maxE) + 0.25*norm(f.minutes,0,maxM) + 0.35*norm(f.recent,0,maxR)));
+    const catsSorted = Object.entries(f.catCounts).sort((a,b)=>b[1]-a[1]);
+    f.domCat = catsSorted[0][0];
+    f.domCat2 = catsSorted.length>1 ? catsSorted[1][0] : null;
+    f.preventablePct = Math.round(100*f.rows.filter(r=>PREVENTABLE.has(r.cat)).length/f.events);
+    f.rows.sort((a,b)=> a.date<b.date?1:-1);
+    f.betaYears = flagMap.has(f.feeder) ? [...flagMap.get(f.feeder)].sort() : [];
+  });
+  arr.sort((a,b)=>b.score-a.score);
+  return arr;
+}
+
+function tier(score){ return score>=70?'high':score>=40?'med':'low'; }
+function tierLabel(t){ return t==='high'?'High':t==='med'?'Medium':'Low'; }
+
+// ---- render: KPI ----
+function renderKPI(rows, feederAgg){
+  const totalMin = rows.reduce((s,d)=>s+d.minutes,0);
+  const avgMin = rows.length ? (totalMin/rows.length).toFixed(1) : '0';
+  const recentCount = rows.filter(d=>d.date>=cutoffStr).length;
+  const nFeeders = feederAgg.length;
+  const kpis = [
+    {label:'เหตุการณ์ทั้งหมด', value:rows.length.toLocaleString(), warn:false},
+    {label:'นาทีไฟดับสะสม', value:totalMin.toLocaleString()+' <small>นาที</small>', warn:false},
+    {label:'เฉลี่ยต่อครั้ง', value:avgMin+' <small>นาที</small>', warn:false},
+    {label:'12 เดือนล่าสุด', value:recentCount.toLocaleString()+' <small>ครั้ง</small>', warn:true},
+    {label:'ฟีดเดอร์ที่มีเหตุ', value:nFeeders, warn:false},
+  ];
+  document.getElementById('kpiStrip').innerHTML = kpis.map(k=>
+    `<div class="kpi ${k.warn?'warn':''}"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`
+  ).join('');
+}
+
+// ---- render: mosaic (signature) ----
+function renderLegend(){
+  document.getElementById('gridLegend').innerHTML = allCats.map(c=>
+    `<span><span class="swatch" style="background:${CAT[c].color}"></span>${CAT[c].label}</span>`
+  ).join('') + `<span>⚡ Worst-Performing (สถิติ, IEEE 1366 Beta)</span>`;
+}
+function renderMosaic(feederAgg){
+  const maxScore = Math.max(...feederAgg.map(f=>f.score),1);
+  const el = document.getElementById('mosaic');
+  el.innerHTML = feederAgg.map(f=>{
+    const intensity = 0.30 + 0.70*(f.score/maxScore);
+    const color = CAT[f.domCat].color;
+    const selected = state.feederQuery && f.feeder.toLowerCase()===state.feederQuery.toLowerCase() ? 'selected':'';
+    const flagged = f.betaYears && f.betaYears.length>0;
+    const flagCls = flagged ? 'beta-flag' : '';
+    const flagMark = flagged ? `<span class="beta-mark">⚡</span>` : '';
+    const flagTip = flagged ? ` · Worst-Performing (สถิติ) ปี ${f.betaYears.join(', ')}` : '';
+    return `<div class="cell ${selected} ${flagCls}" style="background:${color}; opacity:${intensity.toFixed(2)}" data-feeder="${f.feeder}" title="${f.feeder} · ${f.events} เหตุการณ์ · score ${f.score}${flagTip}">
+      ${flagMark}${f.events}<span class="fname">${f.feeder}</span>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.cell').forEach(cell=>{
+    cell.addEventListener('click', ()=>{
+      const fd = cell.getAttribute('data-feeder');
+      document.getElementById('feederSearch').value = (state.feederQuery===fd) ? '' : fd;
+      state.feederQuery = (state.feederQuery===fd) ? '' : fd;
+      rerender();
+    });
+  });
+}
+
+// ---- render: filter chips ----
+function renderChips(){
+  const yc = document.getElementById('yearChips');
+  yc.innerHTML = '<span class="filter-label">Year</span>' + allYears.map(y=>
+    `<button class="chip ${state.years.has(y)?'active':''}" data-year="${y}">${y}</button>`
+  ).join('');
+  yc.querySelectorAll('[data-year]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const y = btn.getAttribute('data-year');
+      if(state.years.has(y)) state.years.delete(y); else state.years.add(y);
+      if(state.years.size===0) allYears.forEach(x=>state.years.add(x));
+      rerender();
+    });
+  });
+  const cc = document.getElementById('catChips');
+  cc.innerHTML = '<span class="filter-label">Cause</span>' + allCats.map(c=>
+    `<button class="chip ${state.cats.has(c)?'active':''}" data-cat="${c}" style="color:${state.cats.has(c)?CAT[c].color:''}"><span class="dot" style="background:${CAT[c].color}"></span>${CAT[c].label}</button>`
+  ).join('');
+  cc.querySelectorAll('[data-cat]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const c = btn.getAttribute('data-cat');
+      if(state.cats.has(c)) state.cats.delete(c); else state.cats.add(c);
+      if(state.cats.size===0) allCats.forEach(x=>state.cats.add(x));
+      rerender();
+    });
+  });
+}
+
+// ---- render: trend chart (hand-built SVG, no external deps) ----
+function renderTrend(rows){
+  const map = new Map();
+  rows.forEach(d=>{
+    const key = d.date.slice(0,7);
+    map.set(key, (map.get(key)||0)+1);
+  });
+  const keys = [...map.keys()].sort();
+  const vals = keys.map(k=>map.get(k));
+  const host = document.getElementById('trendChart');
+
+  if(keys.length===0){ host.innerHTML = '<div class="empty-msg">ไม่พบข้อมูลตามตัวกรองที่เลือก</div>'; return; }
+
+  const W = 900, H = 230, padL = 34, padR = 10, padT = 14, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxV = Math.max(...vals, 1);
+  const niceMax = maxV <= 5 ? 5 : Math.ceil(maxV/5)*5;
+  const stepX = keys.length>1 ? plotW/(keys.length-1) : 0;
+  const xAt = i => padL + i*stepX;
+  const yAt = v => padT + plotH - (v/niceMax)*plotH;
+
+  const linePts = vals.map((v,i)=>`${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(' ');
+  const areaPts = `${padL},${padT+plotH} ${linePts} ${xAt(vals.length-1).toFixed(1)},${padT+plotH}`;
+
+  // gridlines + y labels (5 bands)
+  let gridSvg = '', yLabels = '';
+  for(let g=0; g<=4; g++){
+    const v = niceMax*g/4;
+    const y = yAt(v);
+    gridSvg += `<line class="tc-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}"/>`;
+    yLabels += `<text class="tc-axis-label" x="${padL-8}" y="${(y+3).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  // x labels: show ~10 evenly spaced
+  let xLabels = '';
+  const labelEvery = Math.max(1, Math.ceil(keys.length/10));
+  keys.forEach((k,i)=>{
+    if(i % labelEvery === 0 || i===keys.length-1){
+      xLabels += `<text class="tc-axis-label" x="${xAt(i).toFixed(1)}" y="${H-6}" text-anchor="middle">${k}</text>`;
+    }
+  });
+  const dots = vals.map((v,i)=>`<circle class="tc-dot" data-i="${i}" cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="3.5"/>`).join('');
+
+  host.innerHTML = `<div class="tc-wrap">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      ${gridSvg}
+      <polygon class="tc-area" points="${areaPts}"/>
+      <polyline class="tc-line" points="${linePts}"/>
+      ${dots}
+      ${yLabels}
+      ${xLabels}
+      <line class="tc-hover-line" id="tcHoverLine" x1="0" y1="${padT}" x2="0" y2="${padT+plotH}"/>
+      <rect id="tcCapture" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/>
+    </svg>
+    <div class="tc-tooltip" id="tcTooltip"></div>
+  </div>`;
+
+  const svg = host.querySelector('svg');
+  const tooltip = host.querySelector('#tcTooltip');
+  const hoverLine = host.querySelector('#tcHoverLine');
+  const capture = host.querySelector('#tcCapture');
+  const dotEls = [...host.querySelectorAll('.tc-dot')];
+
+  capture.addEventListener('mousemove', (e)=>{
+    const rect = svg.getBoundingClientRect();
+    const xFrac = (e.clientX - rect.left) / rect.width;
+    const xSvg = xFrac * W;
+    let idx = Math.round((xSvg - padL)/stepX);
+    idx = Math.max(0, Math.min(keys.length-1, idx));
+    dotEls.forEach(d=>d.style.opacity=0);
+    dotEls[idx].style.opacity = 1;
+    hoverLine.style.opacity = 1;
+    hoverLine.setAttribute('x1', xAt(idx)); hoverLine.setAttribute('x2', xAt(idx));
+    const px = rect.left + (xAt(idx)/W)*rect.width;
+    const py = rect.top + (yAt(vals[idx])/H)*rect.height;
+    tooltip.style.left = (px - rect.left) + 'px';
+    tooltip.style.top = (py - rect.top) + 'px';
+    tooltip.style.opacity = 1;
+    tooltip.textContent = `${keys[idx]} · ${vals[idx]} เหตุการณ์`;
+  });
+  capture.addEventListener('mouseleave', ()=>{
+    dotEls.forEach(d=>d.style.opacity=0);
+    hoverLine.style.opacity = 0;
+    tooltip.style.opacity = 0;
+  });
+}
+
+// ---- render: ranking table ----
+let openDetail = null;
+function renderRank(feederAgg){
+  let arr = [...feederAgg];
+  if(state.betaOnly) arr = arr.filter(f=>f.betaYears && f.betaYears.length>0);
+  arr.sort((a,b)=>{
+    let av=a[state.sortKey], bv=b[state.sortKey];
+    if(state.sortKey==='cat'){ av=CAT[a.domCat].label; bv=CAT[b.domCat].label; }
+    if(typeof av==='string') return state.sortDir*av.localeCompare(bv);
+    return state.sortDir*(bv-av);
+  });
+  document.querySelectorAll('#rankTable thead th').forEach(th=>th.classList.remove('sorted'));
+  const activeTh = document.querySelector(`#rankTable thead th[data-key="${state.sortKey}"]`);
+  if(activeTh) activeTh.classList.add('sorted');
+
+  const shown = arr.slice(0, state.rankLimit);
+  const tbody = document.getElementById('rankBody');
+  if(shown.length===0){
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">ไม่พบข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+  } else {
+    tbody.innerHTML = shown.map(f=>{
+      const t = tier(f.score);
+      const flagged = f.betaYears && f.betaYears.length>0;
+      const wpfBadge = flagged
+        ? `<span class="wpf-badge" title="IEEE 1366 Beta Method (β=2.5): จำนวนไฟดับสูงกว่าเกณฑ์ทางสถิติของฟีดเดอร์ทั้งหมดในปี ${f.betaYears.join(', ')}">⚡ WPF</span>`
+        : '';
+      return `<tr class="rank-row" data-feeder="${f.feeder}">
+        <td class="feeder-code">${f.feeder}${wpfBadge}</td>
+        <td class="num">${f.events}</td>
+        <td class="num">${f.minutes.toLocaleString()}</td>
+        <td class="num">${f.recent}</td>
+        <td><span class="cat-pill"><span class="swatch" style="background:${CAT[f.domCat].color}"></span>${CAT[f.domCat].label}</span></td>
+        <td>
+          <span class="score-bar-wrap"><span class="score-bar" style="width:${f.score}%; background:${t==='high'?'var(--danger)':t==='med'?'var(--amber)':'var(--good)'}"></span></span>
+          <span class="badge tier-${t}">${f.score} · ${tierLabel(t)}</span>
+        </td>
+        <td style="max-width:260px; color:var(--text-dim); font-size:11.5px;">${CAT[f.domCat].action}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('showMoreBtn').textContent = arr.length > state.rankLimit
+    ? `แสดง ${shown.length} จาก ${arr.length} ฟีดเดอร์ — คลิกเพื่อแสดงเพิ่ม` : (arr.length? `แสดงครบทั้งหมด ${arr.length} ฟีดเดอร์`:'');
+
+  tbody.querySelectorAll('.rank-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const fname = row.getAttribute('data-feeder');
+      const existing = row.nextElementSibling;
+      if(existing && existing.classList.contains('detail-row')){ existing.remove(); openDetail=null; return; }
+      document.querySelectorAll('.detail-row').forEach(d=>d.remove());
+      const f = feederAgg.find(x=>x.feeder===fname);
+      const catLines = Object.entries(f.catCounts).sort((a,b)=>b[1]-a[1]).map(([c,n])=>
+        `<div class="cat-row" style="margin-bottom:6px;"><span class="cname" style="width:auto;"><span class="swatch" style="background:${CAT[c].color}"></span>${CAT[c].label}</span><span class="cval" style="width:auto;">${n}</span></div>`
+      ).join('');
+      const events = f.rows.slice(0,12).map(e=>
+        `<div><span class="ev-cause">${e.date} · ${e.cause}${e.component?' ('+e.component+')':''}</span><span>${e.minutes}น.</span></div>`
+      ).join('');
+      const tr = document.createElement('tr');
+      tr.className = 'detail-row';
+      tr.innerHTML = `<td colspan="7">
+        <div class="detail-grid">
+          <div>
+            <div class="action-box"><b>คำแนะนำ PM หลัก</b>${CAT[f.domCat].action}</div>
+            ${f.domCat2 ? `<div class="action-box" style="border-color:var(--cyan); background:rgba(11,114,133,.07);"><b style="color:var(--cyan)">คำแนะนำรอง (${CAT[f.domCat2].label})</b>${CAT[f.domCat2].action}</div>` : ''}
+            <div style="font-size:11.5px; color:var(--text-dim); margin-top:8px;">สัดส่วนสาเหตุที่ป้องกันได้ด้วย PM (สัตว์/ต้นไม้/อุปกรณ์): <b style="color:var(--text)">${f.preventablePct}%</b></div>
+            ${catLines}
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; font-family:var(--mono);">ประวัติล่าสุด (สูงสุด 12 รายการ)</div>
+            <div class="event-list">${events}</div>
+          </div>
+        </div>
+      </td>`;
+      row.after(tr);
+      openDetail = fname;
+    });
+  });
+}
+document.getElementById('showMoreBtn').addEventListener('click', ()=>{
+  state.rankLimit += 15; rerender();
+});
+document.querySelectorAll('#rankTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.getAttribute('data-key');
+    if(state.sortKey===key) state.sortDir *= -1; else { state.sortKey=key; state.sortDir = key==='feeder'?1:-1; }
+    rerender();
+  });
+});
+
+// ---- render: cause category breakdown ----
+function renderCatBreakdown(rows){
+  const map = new Map();
+  rows.forEach(d=> map.set(d.cat,(map.get(d.cat)||0)+1));
+  const arr = [...map.entries()].sort((a,b)=>b[1]-a[1]);
+  const total = rows.length || 1;
+  document.getElementById('catBreakdown').innerHTML = arr.map(([c,n])=>{
+    const pct = Math.round(100*n/total);
+    return `<div class="cat-row">
+      <span class="cname"><span class="swatch" style="background:${CAT[c].color}"></span>${CAT[c].label}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${pct}%; background:${CAT[c].color}"></span></span>
+      <span class="cval">${n} (${pct}%)</span>
+    </div>`;
+  }).join('') || '<div class="empty-msg">ไม่มีข้อมูล</div>';
+}
+
+// ---- render: component list ----
+function renderComponents(rows){
+  const map = new Map();
+  rows.forEach(d=>{ if(d.component) map.set(d.component,(map.get(d.component)||0)+1); });
+  const arr = [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  document.getElementById('compList').innerHTML = arr.map(([c,n])=>
+    `<div><span>${c}</span><span>${n}</span></div>`
+  ).join('') || '<div class="empty-msg">ไม่มีข้อมูล</div>';
+}
+
+// ---- render: hotspots ----
+function renderHotspots(rows){
+  const map = new Map();
+  rows.forEach(d=>{
+    if(!d.lateral) return;
+    const key = d.feeder+' — '+d.lateral;
+    if(!map.has(key)) map.set(key, {feeder:d.feeder, lateral:d.lateral, count:0});
+    map.get(key).count++;
+  });
+  const arr = [...map.values()].filter(x=>x.count>=2).sort((a,b)=>b.count-a.count).slice(0,12);
+  document.getElementById('hotspotList').innerHTML = arr.map(x=>
+    `<div><span><span class="hs-feeder">${x.feeder}</span>${x.lateral}</span><span>${x.count} ครั้ง</span></div>`
+  ).join('') || '<div class="empty-msg">ไม่พบจุดเกิดเหตุซ้ำในตัวกรองนี้</div>';
+}
+
+// ---- CSV export ----
+function toCSV(feederAgg){
+  const header = ['Feeder','Events','TotalMinutes','Last12moEvents','DominantCause','PreventablePercent','PriorityScore','PriorityTier','RecommendedPM'];
+  const lines = [header.join(',')];
+  feederAgg.forEach(f=>{
+    const row = [
+      f.feeder, f.events, f.minutes, f.recent,
+      CAT[f.domCat].label, f.preventablePct+'%', f.score, tierLabel(tier(f.score)),
+      '"'+CAT[f.domCat].action.replace(/"/g,'""')+'"'
+    ];
+    lines.push(row.join(','));
+  });
+  return lines.join('\n');
+}
+document.getElementById('dlBtn').addEventListener('click', ()=>{
+  const feederAgg = computeFeederAgg(filteredData());
+  const csv = '\uFEFF' + toCSV(feederAgg);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'PM_Plan_' + (datasetLabel||'feeders').replace(/[^\w\u0E00-\u0E7F-]+/g,'_') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ---- filter wiring ----
+document.getElementById('feederSearch').addEventListener('input', (e)=>{
+  state.feederQuery = e.target.value.trim();
+  rerender();
+});
+document.getElementById('betaOnlyChip').addEventListener('click', ()=>{
+  state.betaOnly = !state.betaOnly;
+  document.getElementById('betaOnlyChip').classList.toggle('active', state.betaOnly);
+  rerender();
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  state.feederQuery=''; document.getElementById('feederSearch').value='';
+  state.years = new Set(allYears); state.cats = new Set(allCats); state.rankLimit=15;
+  state.betaOnly = false; document.getElementById('betaOnlyChip').classList.remove('active');
+  rerender();
+});
+
+// ---- main render ----
+function rerender(){
+  const rows = filteredData();
+  const feederAgg = computeFeederAgg(rows);
+  renderKPI(rows, feederAgg);
+  renderMosaic(feederAgg);
+  renderChips();
+  renderTrend(rows);
+  renderRank(feederAgg);
+  renderCatBreakdown(rows);
+  renderComponents(rows);
+  renderHotspots(rows);
+}
+
+// ============================================================
+// File loading: parse .xlsx (hand-rolled zip+XML reader, no
+// external libraries) or .csv, so this works for any district
+// exported in the same template.
+// ============================================================
+const REQUIRED_COLS = { date:['date'], feeder:['feeder'], minutes:['minutes'], causes:['causes'], component:['component'], lateral:['lateral'] };
+
+function setUploadStatus(msg, isError){
+  const el = document.getElementById('uploadStatus');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--good)';
+}
+
+function colIndexFromRef(ref){
+  const letters = ref.match(/[A-Z]+/)[0];
+  let idx = 0;
+  for(let i=0;i<letters.length;i++) idx = idx*26 + (letters.charCodeAt(i)-64);
+  return idx-1;
+}
+function excelSerialToDateStr(serial){
+  const utcDays = Math.floor(serial - 25569);
+  const d = new Date(utcDays*86400*1000);
+  const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function normalizeDateCell(raw){
+  if(raw==null) return '';
+  const s = String(raw).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const num = parseFloat(s);
+  if(!isNaN(num) && num>1000) return excelSerialToDateStr(num);
+  const d = new Date(s);
+  if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  return '';
+}
+
+// ---- minimal ZIP reader ----
+function readUint16(dv, off){ return dv.getUint16(off, true); }
+function readUint32(dv, off){ return dv.getUint32(off, true); }
+
+function parseZipEntries(bytes){
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const EOCD_SIG = 0x06054b50, CD_SIG = 0x02014b50, LOCAL_SIG = 0x04034b50;
+  let eocdOffset = -1;
+  const minPos = Math.max(0, bytes.length - 65557);
+  for(let i = bytes.length - 22; i >= minPos; i--){
+    if(readUint32(dv,i) === EOCD_SIG){ eocdOffset = i; break; }
+  }
+  if(eocdOffset === -1) throw new Error('ไม่พบโครงสร้าง ZIP ที่ถูกต้อง (ไฟล์อาจไม่ใช่ .xlsx จริง)');
+  const entryCount = readUint16(dv, eocdOffset+10);
+  const cdOffset = readUint32(dv, eocdOffset+16);
+  const entries = {};
+  let ptr = cdOffset;
+  for(let i=0;i<entryCount;i++){
+    if(readUint32(dv,ptr) !== CD_SIG) throw new Error('อ่านโครงสร้างไฟล์ ZIP ไม่สำเร็จ');
+    const compressionMethod = readUint16(dv, ptr+10);
+    const compressedSize = readUint32(dv, ptr+20);
+    const fileNameLength = readUint16(dv, ptr+28);
+    const extraLength = readUint16(dv, ptr+30);
+    const commentLength = readUint16(dv, ptr+32);
+    const localHeaderOffset = readUint32(dv, ptr+42);
+    const fileName = new TextDecoder('utf-8').decode(bytes.slice(ptr+46, ptr+46+fileNameLength));
+    entries[fileName] = { compressionMethod, compressedSize, localHeaderOffset };
+    ptr += 46 + fileNameLength + extraLength + commentLength;
+  }
+  return { entries, LOCAL_SIG };
+}
+
+async function inflateRaw(bytesSlice){
+  if(typeof DecompressionStream === 'undefined'){
+    throw new Error('เบราว์เซอร์นี้ไม่รองรับการคลายไฟล์ .xlsx โดยตรง กรุณาบันทึกไฟล์เป็น .csv แล้วลองใหม่');
+  }
+  const stream = new Blob([bytesSlice]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  const buf = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function extractZipFile(bytes, entries, localSig, name){
+  const entry = entries[name];
+  if(!entry) return null;
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const off = entry.localHeaderOffset;
+  if(readUint32(dv, off) !== localSig) throw new Error('อ่านหัวไฟล์ภายใน ZIP ไม่สำเร็จ');
+  const fileNameLength = readUint16(dv, off+26);
+  const extraLength = readUint16(dv, off+28);
+  const dataStart = off + 30 + fileNameLength + extraLength;
+  const compressed = bytes.slice(dataStart, dataStart + entry.compressedSize);
+  const raw = entry.compressionMethod === 0 ? compressed : await inflateRaw(compressed);
+  return new TextDecoder('utf-8').decode(raw);
+}
+
+function xmlCellsInRow(rowEl){ return [...rowEl.getElementsByTagName('c')]; }
+
+function cellText(c, sharedStrings){
+  const t = c.getAttribute('t');
+  if(t === 's'){
+    const v = c.getElementsByTagName('v')[0];
+    return v ? (sharedStrings[parseInt(v.textContent,10)] || '') : '';
+  }
+  if(t === 'inlineStr'){
+    const isEl = c.getElementsByTagName('is')[0];
+    return isEl ? (isEl.textContent||'').trim() : '';
+  }
+  const v = c.getElementsByTagName('v')[0];
+  return v ? v.textContent : '';
+}
+
+async function parseXlsxFile(file){
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const { entries, LOCAL_SIG } = parseZipEntries(buf);
+
+  // resolve first worksheet path via workbook.xml + rels (fallback to sheet1.xml)
+  let sheetPath = 'xl/worksheets/sheet1.xml';
+  try{
+    const wbXml = await extractZipFile(buf, entries, LOCAL_SIG, 'xl/workbook.xml');
+    const relsXml = await extractZipFile(buf, entries, LOCAL_SIG, 'xl/_rels/workbook.xml.rels');
+    if(wbXml && relsXml){
+      const wbDoc = new DOMParser().parseFromString(wbXml, 'application/xml');
+      const firstSheet = wbDoc.getElementsByTagName('sheet')[0];
+      const rId = firstSheet && firstSheet.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+      if(rId){
+        const relsDoc = new DOMParser().parseFromString(relsXml, 'application/xml');
+        const rel = [...relsDoc.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rId);
+        if(rel){ sheetPath = 'xl/' + rel.getAttribute('Target').replace(/^\/?/,''); }
+      }
+    }
+  } catch(e){ /* fall back to default sheet1.xml path */ }
+
+  const sharedXml = await extractZipFile(buf, entries, LOCAL_SIG, 'xl/sharedStrings.xml');
+  let sharedStrings = [];
+  if(sharedXml){
+    const ssDoc = new DOMParser().parseFromString(sharedXml, 'application/xml');
+    sharedStrings = [...ssDoc.getElementsByTagName('si')].map(si => {
+      const texts = [...si.getElementsByTagName('t')].map(t=>t.textContent);
+      return texts.join('');
+    });
+  }
+
+  const sheetXml = await extractZipFile(buf, entries, LOCAL_SIG, sheetPath);
+  if(!sheetXml) throw new Error('ไม่พบชีตข้อมูลในไฟล์นี้');
+  const sheetDoc = new DOMParser().parseFromString(sheetXml, 'application/xml');
+  const rows = [...sheetDoc.getElementsByTagName('row')];
+
+  // find header row: first row containing a cell exactly "Feeder"
+  let headerRowIdx = -1, colMap = null;
+  for(let i=0;i<Math.min(rows.length,8);i++){
+    const cells = xmlCellsInRow(rows[i]);
+    const found = {};
+    cells.forEach(c=>{
+      const txt = cellText(c, sharedStrings).trim();
+      const idx = colIndexFromRef(c.getAttribute('r'));
+      const low = txt.toLowerCase();
+      if(low.startsWith('date')) found.date = idx;
+      else if(low === 'feeder') found.feeder = idx;
+      else if(low === 'minutes') found.minutes = idx;
+      else if(low === 'causes') found.causes = idx;
+      else if(low === 'component') found.component = idx;
+      else if(low === 'lateral') found.lateral = idx;
+    });
+    if(found.feeder!==undefined && found.date!==undefined && found.causes!==undefined){
+      headerRowIdx = i; colMap = found; break;
+    }
+  }
+  if(headerRowIdx === -1){
+    throw new Error('ไม่พบแถวหัวตาราง (ต้องมีคอลัมน์ Date, Feeder, Minutes, Causes เหมือนไฟล์ต้นฉบับ)');
+  }
+
+  const records = [];
+  for(let i=headerRowIdx+1; i<rows.length; i++){
+    const cells = xmlCellsInRow(rows[i]);
+    if(cells.length===0) continue;
+    const byIdx = {};
+    cells.forEach(c=>{ byIdx[colIndexFromRef(c.getAttribute('r'))] = cellText(c, sharedStrings); });
+    const feeder = (byIdx[colMap.feeder]||'').trim();
+    const dateStr = normalizeDateCell(byIdx[colMap.date]);
+    if(!feeder || !dateStr) continue;
+    const minutesRaw = colMap.minutes!==undefined ? byIdx[colMap.minutes] : '0';
+    const minutes = parseInt(minutesRaw,10) || 0;
+    const cause = (colMap.causes!==undefined ? (byIdx[colMap.causes]||'') : '').trim();
+    let component = (colMap.component!==undefined ? (byIdx[colMap.component]||'') : '').trim();
+    if(component==='-') component='';
+    let lateral = (colMap.lateral!==undefined ? (byIdx[colMap.lateral]||'') : '').trim();
+    if(lateral==='-') lateral='';
+    records.push({ date:dateStr, feeder, minutes, cause, cat:categorize(cause), component, lateral, year:dateStr.slice(0,4) });
+  }
+  return records;
+}
+
+function parseCsvLine(line){
+  const out = []; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i];
+    if(inQ){
+      if(ch==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else inQ=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') inQ=true;
+      else if(ch===','){ out.push(cur); cur=''; }
+      else cur+=ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsvFile(text){
+  const lines = text.split(/\r\n|\n/).filter(l=>l.length>0);
+  let headerIdx = -1, colMap=null;
+  for(let i=0;i<Math.min(lines.length,8);i++){
+    const cells = parseCsvLine(lines[i]).map(c=>c.trim());
+    const found = {};
+    cells.forEach((txt,idx)=>{
+      const low = txt.toLowerCase();
+      if(low.startsWith('date')) found.date=idx;
+      else if(low==='feeder') found.feeder=idx;
+      else if(low==='minutes') found.minutes=idx;
+      else if(low==='causes') found.causes=idx;
+      else if(low==='component') found.component=idx;
+      else if(low==='lateral') found.lateral=idx;
+    });
+    if(found.feeder!==undefined && found.date!==undefined && found.causes!==undefined){ headerIdx=i; colMap=found; break; }
+  }
+  if(headerIdx===-1) throw new Error('ไม่พบแถวหัวตาราง (ต้องมีคอลัมน์ Date, Feeder, Minutes, Causes เหมือนไฟล์ต้นฉบับ)');
+  const records = [];
+  for(let i=headerIdx+1;i<lines.length;i++){
+    const cells = parseCsvLine(lines[i]);
+    const feeder = (cells[colMap.feeder]||'').trim();
+    const dateStr = normalizeDateCell(cells[colMap.date]);
+    if(!feeder || !dateStr) continue;
+    const minutes = colMap.minutes!==undefined ? (parseInt(cells[colMap.minutes],10)||0) : 0;
+    const cause = (colMap.causes!==undefined ? (cells[colMap.causes]||'') : '').trim();
+    let component = (colMap.component!==undefined ? (cells[colMap.component]||'') : '').trim();
+    if(component==='-') component='';
+    let lateral = (colMap.lateral!==undefined ? (cells[colMap.lateral]||'') : '').trim();
+    if(lateral==='-') lateral='';
+    records.push({ date:dateStr, feeder, minutes, cause, cat:categorize(cause), component, lateral, year:dateStr.slice(0,4) });
+  }
+  return records;
+}
+
+document.getElementById('loadFileBtn').addEventListener('click', ()=> document.getElementById('fileInput').click());
+document.getElementById('emptyStateLoadBtn').addEventListener('click', ()=> document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  setUploadStatus('กำลังอ่านไฟล์ ' + file.name + ' …', false);
+  try{
+    let records;
+    if(/\.csv$/i.test(file.name)){
+      records = parseCsvFile(await file.text());
+    } else if(/\.xlsx$/i.test(file.name)){
+      records = await parseXlsxFile(file);
+    } else {
+      throw new Error('รองรับเฉพาะไฟล์ .xlsx หรือ .csv');
+    }
+    const label = file.name.replace(/\.(xlsx|csv)$/i,'');
+    applyDataset(records, label);
+    setUploadStatus(`โหลดสำเร็จ: ${records.length.toLocaleString()} เหตุการณ์จาก ${file.name}`, false);
+  } catch(err){
+    console.error(err);
+    setUploadStatus('โหลดไฟล์ไม่สำเร็จ: ' + err.message, true);
+  }
+  e.target.value = '';
+});
+document.getElementById('methodToggleBtn').addEventListener('click', ()=>{
+  const note = document.getElementById('mosaicNote');
+  const btn = document.getElementById('methodToggleBtn');
+  const isOpen = note.style.display !== 'none';
+  note.style.display = isOpen ? 'none' : 'block';
+  btn.classList.toggle('open', !isOpen);
+});
+document.getElementById('resetDataBtn').addEventListener('click', ()=>{
+  data = undefined;
+  document.getElementById('dashboardContent').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('resetDataBtn').style.display = 'none';
+  document.getElementById('periodBox').innerHTML = '<b>—</b>ยังไม่มีข้อมูล';
+  setUploadStatus('ล้างข้อมูลแล้ว — โหลดไฟล์ใหม่เพื่อเริ่มวิเคราะห์', false);
+});
+</script>
+</body>
+</html>
