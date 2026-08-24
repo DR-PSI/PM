@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Suite — by DR.PHANUPHON S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#f7f5f0;
+    --bg-1:#ffffff;
+    --bg-2:#efeade;
+    --line:#ddd6c5;
+    --line-soft:#e8e2d3;
+    --ink:#211d17;
+    --ink-soft:#6a6255;
+    --ink-faint:#9a9284;
+    --amber:#c4713a;
+    --amber-soft:#e8c7ab;
+    --teal:#1f7a72;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Sarabun', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--ink);font-family:var(--font-body);}
+
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--line-soft) 75%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--line-soft) 75%, transparent) 1px, transparent 1px),
+      linear-gradient(color-mix(in srgb, var(--line) 90%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--line) 90%, transparent) 1px, transparent 1px),
+      radial-gradient(color-mix(in srgb, var(--amber) 55%, transparent) 1.4px, transparent 1.4px);
+    background-size: 28px 28px, 28px 28px, 168px 168px, 168px 168px, 168px 168px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px, 83px 83px;
+    -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, black 35%, transparent 88%);
+    mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, black 35%, transparent 88%);
+  }
+
+  .wrap{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:56px 28px 80px;}
+
+  /* ---------------- HERO ---------------- */
+  .hero{
+    position:relative;
+    border:1px solid var(--line);
+    background:var(--bg-1);
+    border-radius:4px;
+    padding:52px 48px 44px;
+    margin-bottom:18px;
+  }
+  .corner{position:absolute; width:26px; height:26px; border-color:var(--amber); opacity:.85;}
+  .corner.tl{top:-1px; left:-1px; border-top:2px solid; border-left:2px solid;}
+  .corner.tr{top:-1px; right:-1px; border-top:2px solid; border-right:2px solid;}
+  .corner.bl{bottom:-1px; left:-1px; border-bottom:2px solid; border-left:2px solid;}
+  .corner.br{bottom:-1px; right:-1px; border-bottom:2px solid; border-right:2px solid;}
+
+  .eyebrow{
+    display:flex; align-items:center; gap:9px;
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:1.6px; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:22px;
+  }
+  .eyebrow .dot{
+    position:relative; width:7px; height:7px; border-radius:50%;
+    background:#2fbf5f; flex-shrink:0;
+    box-shadow:0 0 0 3px rgba(47,191,95,.18);
+  }
+  .eyebrow .dot::after{
+    content:""; position:absolute; inset:-5px; border-radius:50%;
+    border:1.5px solid #2fbf5f; opacity:0;
+    animation: dot-ping 1.8s cubic-bezier(0,.6,.4,1) infinite;
+  }
+  @keyframes dot-ping{
+    0%{ transform:scale(.5); opacity:.8; }
+    100%{ transform:scale(2.2); opacity:0; }
+  }
+
+  .hero h1{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(20px, 2.6vw, 30px);
+    line-height:1.25; margin:0 0 14px; color:var(--ink); letter-spacing:-.01em;
+    max-width:100%; white-space:nowrap;
+  }
+  @media (max-width: 700px){ .hero h1{ white-space:normal; font-size:clamp(18px, 5vw, 24px); } }
+  .hero h1 .accent{color:var(--amber);}
+  .hero p.lede{
+    font-size:15px; line-height:1.75; color:var(--ink-soft); max-width:640px; margin:0;
+  }
+
+  .hero-meta{
+    display:flex; gap:28px; margin-top:34px; padding-top:26px; border-top:1px solid var(--line-soft);
+    flex-wrap:wrap;
+  }
+  .hero-meta .m{display:flex; flex-direction:column; gap:4px;}
+  .hero-meta .m .k{font-family:var(--font-mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-faint);}
+  .hero-meta .m .v{font-family:var(--font-mono); font-size:13.5px; color:var(--ink); font-weight:500;}
+
+  /* ---------------- GRID ---------------- */
+  .grid-label{
+    display:flex; align-items:center; gap:10px; margin:44px 0 18px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .grid-label::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:18px;
+  }
+  @media (max-width: 920px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    position:relative;
+    display:flex; flex-direction:column;
+    background:var(--bg-1); border:1px solid var(--line); border-radius:4px;
+    padding:0; overflow:hidden; text-decoration:none; color:inherit;
+    transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{
+    border-color:var(--amber); transform:translateY(-3px);
+    box-shadow:0 16px 32px -18px rgba(33,29,23,.28);
+  }
+  .card .band{height:3px; width:100%; background:var(--card-color, var(--amber));}
+  .card-body{padding:26px 24px 24px; display:flex; flex-direction:column; gap:14px; flex:1;}
+
+  .card-icon{
+    width:42px; height:42px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    background:color-mix(in srgb, var(--card-color, var(--amber)) 14%, white); color:var(--card-color, var(--amber));
+    flex-shrink:0;
+  }
+
+  .card-tag{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .card h3{font-family:var(--font-display); font-size:19px; font-weight:600; margin:0; color:var(--ink); line-height:1.3;}
+  .card h3 .sub{display:block; font-family:var(--font-body); font-weight:400; font-size:12.5px; color:var(--ink-faint); margin-top:3px;}
+  .card p.desc{font-size:13px; line-height:1.7; color:var(--ink-soft); margin:0; flex:1;}
+
+  .card-meta{
+    display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);
+    background:var(--bg-2); border:1px solid var(--line-soft); border-radius:6px; padding:7px 10px; width:fit-content;
+  }
+
+  .card-cta{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:15px 24px; border-top:1px solid var(--line-soft);
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.3px; color:var(--ink);
+    font-weight:500;
+  }
+  .card-cta .arrow{
+    display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%;
+    background:var(--bg-2); color:var(--card-color, var(--amber)); transition:.18s;
+  }
+  .card:hover .card-cta .arrow{background:var(--card-color, var(--amber)); color:#fff; transform:translateX(2px);}
+
+  /* ---------------- FOOTER ---------------- */
+  footer{
+    margin-top:50px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);
+  }
+  footer a{color:var(--ink-faint); text-decoration:none;}
+  footer a:hover{color:var(--amber);}
+
+  .copyright{
+    text-align:center; margin-top:14px;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); opacity:.8;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+
+    <div class="eyebrow"><span class="dot"></span>PM SUITE · BY DR.PHANUPHON S.</div>
+    <h1>APP <span class="accent">การวางแผนบำรุงรักษาอุปกรณ์ไฟฟ้า</span></h1>
+    <p class="lede">เลือกเครื่องมือที่ต้องการใช้งาน — วิเคราะห์แผน PM อุปกรณ์ไฟฟ้า จัดลำดับความสำคัญจากสถิติไฟฟ้าดับ และวางแผนเส้นทางตรวจอุปกรณ์ตามพิกัด GPS ทุกเครื่องมือทำงานจากไฟล์ที่โหลดจาก Maximo โดยตรง ไม่ต้องติดตั้งอะไรเพิ่ม</p>
+
+    <div class="hero-meta">
+      <div class="m"><span class="k">เครื่องมือ</span><span class="v">6 โมดูล</span></div>
+      <div class="m"><span class="k">แหล่งข้อมูล</span><span class="v">Maximo Export (.xlsx / .csv)</span></div>
+      <div class="m"><span class="k">การทำงาน</span><span class="v">ในเบราว์เซอร์ทั้งหมด</span></div>
+    </div>
+  </div>
+
+  <div class="grid-label">เลือกเครื่องมือ</div>
+
+  <div class="grid">
+
+    <a class="card" href="https://dr-psi.github.io/PM/pm_scheduling" style="--card-color:#c4713a;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5Z"/><path d="M9.5 12.5l2 2 3.5-4"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">PREVENTIVE MAINTENANCE ANALYZER</div>
+          <h3>ตารางวางแผน PM อุปกรณ์ไฟฟ้า<span class="sub">PM Scheduling</span></h3>
+        </div>
+        <p class="desc">สรุปตารางแผนบำรุงรักษาเชิงป้องกันอุปกรณ์ไฟฟ้าจากไฟล์ Maximo กรองตาม Work Center และช่วงวันที่ เรียงลำดับตามวันครบกำหนดใกล้สุดก่อนโดยอัตโนมัติ</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          PMNUM · ROUTE · NEXTDATE
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+    <a class="card" href="https://dr-psi.github.io/PM/Feeder_Outage_PM" style="--card-color:#1f7a72;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6Z"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">OUTAGE INTELLIGENCE FOR MAINTENANCE PLANNING</div>
+          <h3>สถิติไฟฟ้าดับรายสายป้อน<span class="sub">Feeder Outage &amp; PM</span></h3>
+        </div>
+        <p class="desc">วิเคราะห์ข้อมูลไฟฟ้าดับรายสายป้อนเพื่อจัดลำดับความสำคัญ ชี้เป้าสายป้อนที่ควรวางแผนบำรุงรักษาเชิงป้องกันก่อน</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          FEEDER · OUTAGE LOG (.xlsx/.csv)
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+    <a class="card" href="https://dr-psi.github.io/PM/asset_gps_grouping.html" style="--card-color:#3d6fc4;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 12 2a7 7 0 0 1 7 7.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">GPS PROXIMITY GROUPING</div>
+          <h3>วางแผนเส้นทางตรวจอุปกรณ์<span class="sub">Route Planning</span></h3>
+        </div>
+        <p class="desc">จัดกลุ่มอุปกรณ์ไฟฟ้าตามพิกัด GPS และประเภทอุปกรณ์ ดูบนแผนที่ แล้วส่งออกเป็น Route สำหรับนำเข้า Maximo ได้ทันที</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          ASSETNUM · ZLATITUDE · ZLONGITUDE
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+    <a class="card" href="https://dr-psi.github.io/INSPEC-PM/" style="--card-color:#7a4fc4;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">FIELD INSPECTION &amp; PM RECORDS</div>
+          <h3>ฟอร์มเอกสารการบำรุงรักษาอุปกรณ์ไฟฟ้า<span class="sub">Inspection Form</span></h3>
+        </div>
+        <p class="desc">กรอกแบบฟอร์มตรวจสอบและบันทึกผลการบำรุงรักษาอุปกรณ์ไฟฟ้าภาคสนามแบบดิจิทัล ใช้งานง่ายผ่านมือถือหรือแท็บเล็ตหน้างาน เก็บประวัติการตรวจสอบไว้อ้างอิงหรือส่งต่อเข้า Maximo ได้ในภายหลัง</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          FORM · FIELD INSPECTION RECORDS
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+    <a class="card" href="https://dr-psi.github.io/route/" style="--card-color:#2f9e6b;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polygon points="16.2 7.8 13.6 13.6 7.8 16.2 10.4 10.4 16.2 7.8"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">FIELD ROUTE NAVIGATION</div>
+          <h3>นำทางเส้นทางตรวจ PM ภาคสนาม<span class="sub">PM Route Navigators</span></h3>
+        </div>
+        <p class="desc">นำทีมช่างไปตามเส้นทางตรวจ PM ที่วางแผนไว้แบบทีละจุด ดูลำดับจุดตรวจถัดไปและนำทางไปยังตำแหน่งอุปกรณ์แต่ละจุดได้ทันทีจากมือถือ ช่วยให้ทีมภาคสนามตรวจครบทุกจุดตามแผนโดยไม่หลงเส้นทาง</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          NAVIGATION · FIELD ROUTE EXECUTION
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+    <a class="card" href="https://dr-psi.github.io/wo/" style="--card-color:#b5484a;">
+      <div class="band"></div>
+      <div class="card-body">
+        <div class="card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>
+        </div>
+        <div>
+          <div class="card-tag">WORK ORDER ANOMALY &amp; PATTERN ANALYSIS</div>
+          <h3>วิเคราะห์ความผิดปกติของงาน Work Order<span class="sub">Work Order Anomaly &amp; Pattern Dashboard</span></h3>
+        </div>
+        <p class="desc">วิเคราะห์ข้อมูล Work Order จาก CMMS ทั้งงานตามแผน (TRxP) และงานแก้ไข (TRxC) เพื่อค้นหาจุดที่ซ่อมซ้ำบ่อยผิดปกติ งานที่ใช้เวลาดำเนินการผิดปกติ และแนวโน้มความถี่ของงานซ่อมบำรุงที่เบี่ยงเบนไปจากปกติ ช่วยชี้เป้าจุดที่ควรตรวจสอบเชิงลึกก่อนปัญหาลุกลาม</p>
+        <div class="card-meta">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+          TRxP · TRxC · WORK ORDER LOG
+        </div>
+      </div>
+      <div class="card-cta"><span>เปิดเครื่องมือ</span><span class="arrow">></span></div>
+    </a>
+
+  </div>
+
+  <footer>
+    <span>ทุกเครื่องมือประมวลผลในเบราว์เซอร์ ไม่มีการอัปโหลดข้อมูลขึ้นเซิร์ฟเวอร์</span>
+  </footer>
+  <div class="copyright">© Copyright 2026 · DR.PHANUPHON S.</div>
+
+</div>
+</body>
+</html>
